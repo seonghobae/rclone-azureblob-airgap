@@ -1,3 +1,15 @@
+rclone-azureblob-airgap (1.73.2-6) unstable; urgency=medium
+
+  * build-deb.yml: add real arm64 smoke-test on ubuntu-24.04-arm runner.
+  * build-deb.yml: remove verify script failure masking by introducing
+    --allow-missing-fuse mode instead of '|| true'.
+  * verify-mount.sh, verify-azureblob.sh: add --allow-missing-fuse and
+    fix PASS/FAIL/WARN counters to avoid ((VAR++)) + set -e pitfalls.
+  * docs: remove stale hardcoded release examples and align acceptance/
+    agent docs with amd64+arm64 smoke-test coverage.
+
+ -- seonghobae <seonghobae@users.noreply.github.com>  Thu, 19 Mar 2026 00:00:00 +0000
+
 rclone-azureblob-airgap (1.73.2-5) unstable; urgency=medium
 
   * README.md, ARCHITECTURE.md: replace hardcoded v1.73.2-2 with v1.73.2-4 /

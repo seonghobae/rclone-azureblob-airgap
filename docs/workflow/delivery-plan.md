@@ -6,7 +6,7 @@
 1. 기능 구현 / 버그 수정 → main 브랜치 push
 2. CI 자동 실행 (Build deb + Integration test)
 3. CI green 확인
-4. git tag v{rclone_ver}-{pkg_rev}  (예: v1.73.2-5)
+4. git tag v{rclone_ver}-{pkg_rev}  (예: v{rclone_ver}-{pkg_rev})
 5. git push origin v{rclone_ver}-{pkg_rev}
 6. Release 워크플로 자동 실행 → GitHub Release 생성
 7. 사용자: GitHub Release 에서 deb 다운로드 → VM 전송 → dpkg -i
@@ -16,8 +16,8 @@
 
 - `{rclone_ver}`: rclone upstream 버전 (예: 1.73.2)
 - `{pkg_rev}`: 패키지 개정번호 (1부터 증가)
-- 태그 형식: `v{rclone_ver}-{pkg_rev}` (예: `v1.73.2-5`)
-- deb 버전: `{rclone_ver}-{pkg_rev}` (예: `1.73.2-5`)
+- 태그 형식: `v{rclone_ver}-{pkg_rev}`
+- deb 버전: `{rclone_ver}-{pkg_rev}`
 
 ## PR 흐름
 

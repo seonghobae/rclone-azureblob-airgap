@@ -12,7 +12,7 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │  GitHub Release (인터넷 되는 머신에서 다운로드)                  │
 │  rclone-azureblob-airgap_{VER}_{amd64,arm64}.deb                │
-│  (최신: v1.73.2-4)                                               │
+│  (예: v{rclone_ver}-{pkg_rev})                                   │
 └──────────────────────────┬──────────────────────────────────────┘
                            │ scp / USB / 내부 파일 서버
                            ▼
@@ -112,10 +112,12 @@ push/PR → main
   ├── Build deb package
   │     ├── Download rclone {amd64,arm64}  (병렬)
   │     ├── Build deb {amd64,arm64}        (병렬)
-  │     └── Smoke test (amd64)
+  │     └── Smoke test {amd64,arm64}
   │           ├── dpkg -i (postinst 검증)
   │           ├── FUSE3 자동 설치 검증
-  │           └── verify-mount.sh, verify-azureblob.sh
+  │           ├── bundled fuse-debs(8 files) assertion
+  │           ├── example conf 존재 assertion
+  │           └── verify-mount.sh, verify-azureblob.sh (--allow-missing-fuse)
   │
   └── Integration test (Docker)
         ├── Docker integration {jammy,noble}  (병렬)

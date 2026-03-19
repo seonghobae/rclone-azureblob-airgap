@@ -24,18 +24,19 @@ NC='\033[0m'
 PASS=0
 FAIL=0
 WARN=0
+ALLOW_MISSING_FUSE=false
 
 check_pass() {
 	echo -e "  ${GREEN}[PASS]${NC} $*"
-	((PASS++))
+	PASS=$((PASS + 1))
 }
 check_fail() {
 	echo -e "  ${RED}[FAIL]${NC} $*"
-	((FAIL++))
+	FAIL=$((FAIL + 1))
 }
 check_warn() {
 	echo -e "  ${YELLOW}[WARN]${NC} $*"
-	((WARN++))
+	WARN=$((WARN + 1))
 }
 section() { echo -e "\n${BLUE}── $* ──${NC}"; }
 
@@ -63,8 +64,13 @@ while [[ $# -gt 0 ]]; do
 		RCLONE_CONF="$2"
 		shift 2
 		;;
+	--allow-missing-fuse)
+		ALLOW_MISSING_FUSE=true
+		shift
+		;;
 	-h | --help)
 		sed -n '2,18p' "$0" | sed 's/^# \?//'
+		echo "  --allow-missing-fuse  CI/컨테이너 등 /dev/fuse 없는 환경에서 FUSE 커널 장치 부재를 WARN으로 처리"
 		exit 0
 		;;
 	*) shift ;;
@@ -166,7 +172,11 @@ section "3. FUSE 환경 (mount용)"
 if [[ -c /dev/fuse ]]; then
 	check_pass "/dev/fuse 장치 존재"
 else
-	check_fail "/dev/fuse 없음 → sudo modprobe fuse"
+	if [[ "$ALLOW_MISSING_FUSE" == true ]]; then
+		check_warn "/dev/fuse 없음 (CI/비-privileged 환경 허용 모드)"
+	else
+		check_fail "/dev/fuse 없음 → sudo modprobe fuse"
+	fi
 fi
 
 if command -v fusermount3 &>/dev/null; then

@@ -39,21 +39,21 @@ sha256sum -c "rclone-azureblob-airgap_${VER}_${ARCH}.deb.sha256"
 
 ```bash
 # amd64 (x86_64)
-curl -LO https://github.com/seonghobae/rclone-azureblob-airgap/releases/latest/download/rclone-azureblob-airgap_1.73.2-4_amd64.deb
-curl -LO https://github.com/seonghobae/rclone-azureblob-airgap/releases/latest/download/rclone-azureblob-airgap_1.73.2-4_amd64.deb.sha256
-sha256sum -c rclone-azureblob-airgap_1.73.2-4_amd64.deb.sha256
+curl -LO https://github.com/seonghobae/rclone-azureblob-airgap/releases/download/v{VER}/rclone-azureblob-airgap_{VER}_amd64.deb
+curl -LO https://github.com/seonghobae/rclone-azureblob-airgap/releases/download/v{VER}/rclone-azureblob-airgap_{VER}_amd64.deb.sha256
+sha256sum -c rclone-azureblob-airgap_{VER}_amd64.deb.sha256
 
 # arm64 (aarch64)
-curl -LO https://github.com/seonghobae/rclone-azureblob-airgap/releases/latest/download/rclone-azureblob-airgap_1.73.2-4_arm64.deb
-curl -LO https://github.com/seonghobae/rclone-azureblob-airgap/releases/latest/download/rclone-azureblob-airgap_1.73.2-4_arm64.deb.sha256
-sha256sum -c rclone-azureblob-airgap_1.73.2-4_arm64.deb.sha256
+curl -LO https://github.com/seonghobae/rclone-azureblob-airgap/releases/download/v{VER}/rclone-azureblob-airgap_{VER}_arm64.deb
+curl -LO https://github.com/seonghobae/rclone-azureblob-airgap/releases/download/v{VER}/rclone-azureblob-airgap_{VER}_arm64.deb.sha256
+sha256sum -c rclone-azureblob-airgap_{VER}_arm64.deb.sha256
 ```
 
 ### 2단계: VM으로 전송
 
 ```bash
 # scp 예시
-scp rclone-azureblob-airgap_1.73.2-4_amd64.deb user@airgap-vm:/tmp/
+scp rclone-azureblob-airgap_{VER}_amd64.deb user@airgap-vm:/tmp/
 
 # USB, rsync, 내부 파일 서버 등 어떤 방법도 가능
 ```
@@ -61,7 +61,7 @@ scp rclone-azureblob-airgap_1.73.2-4_amd64.deb user@airgap-vm:/tmp/
 ### 3단계: VM에서 설치 (한 명령으로 완료)
 
 ```bash
-sudo dpkg -i rclone-azureblob-airgap_1.73.2-4_amd64.deb
+sudo dpkg -i rclone-azureblob-airgap_{VER}_amd64.deb
 ```
 
 `dpkg -i` 한 번으로 다음이 모두 자동 처리됩니다:
@@ -235,7 +235,7 @@ sudo dpkg -i --force-depends \
 ## 무결성 검증
 
 ```bash
-sha256sum -c rclone-azureblob-airgap_1.73.2-4_amd64.deb.sha256
+sha256sum -c rclone-azureblob-airgap_{VER}_amd64.deb.sha256
 ```
 
 ---

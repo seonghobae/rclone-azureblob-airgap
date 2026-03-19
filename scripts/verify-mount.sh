@@ -15,20 +15,36 @@ NC='\033[0m'
 PASS=0
 FAIL=0
 WARN=0
+ALLOW_MISSING_FUSE=false
 
 check_pass() {
 	echo -e "  ${GREEN}[PASS]${NC} $*"
-	((PASS++))
+	PASS=$((PASS + 1))
 }
 check_fail() {
 	echo -e "  ${RED}[FAIL]${NC} $*"
-	((FAIL++))
+	FAIL=$((FAIL + 1))
 }
 check_warn() {
 	echo -e "  ${YELLOW}[WARN]${NC} $*"
-	((WARN++))
+	WARN=$((WARN + 1))
 }
 section() { echo -e "\n${BLUE}── $* ──${NC}"; }
+
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+	--allow-missing-fuse)
+		ALLOW_MISSING_FUSE=true
+		shift
+		;;
+	-h | --help)
+		echo "사용법: bash verify-mount.sh [--allow-missing-fuse]"
+		echo "  --allow-missing-fuse  CI/컨테이너 등 /dev/fuse 없는 환경에서 FUSE 커널 장치 부재를 WARN으로 처리"
+		exit 0
+		;;
+	*) shift ;;
+	esac
+done
 
 section "1. rclone 바이너리"
 if rclone_path=$(command -v rclone 2>/dev/null); then
@@ -49,7 +65,11 @@ if [[ -c /dev/fuse ]]; then
 		check_warn "/dev/fuse 권한: $perm (666 이 권장됨 → sudo chmod 666 /dev/fuse)"
 	fi
 else
-	check_fail "/dev/fuse 없음"
+	if [[ "$ALLOW_MISSING_FUSE" == true ]]; then
+		check_warn "/dev/fuse 없음 (CI/비-privileged 환경 허용 모드)"
+	else
+		check_fail "/dev/fuse 없음"
+	fi
 	echo "    → 시도: sudo modprobe fuse"
 	echo "    → VM 이면: VM 설정에서 /dev/fuse passthrough 또는 privileged 실행 필요"
 fi
