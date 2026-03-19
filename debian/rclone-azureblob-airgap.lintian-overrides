@@ -9,7 +9,8 @@ rclone-azureblob-airgap: no-manual-page usr/bin/rclone
 # non-standard-dir-perm: /etc/rclone* are intentionally restricted
 # (contain credentials, TLS certs)
 rclone-azureblob-airgap: non-standard-dir-perm etc/rclone/ 0750 != 0755
-rclone-azureblob-airgap: non-standard-dir-perm etc/rclone/certs/ 0700 != 0755
+# certs/ ends up 0750 after dh_fixperms; intentional (TLS private keys)
+rclone-azureblob-airgap: non-standard-dir-perm etc/rclone/certs/ 0750 != 0755
 rclone-azureblob-airgap: non-standard-dir-perm etc/rclone/mounts/ 0750 != 0755
 
 # non-standard-file-perm: azure conf templates contain example credentials,
@@ -20,5 +21,5 @@ rclone-azureblob-airgap: non-standard-file-perm usr/share/rclone-azureblob-airga
 rclone-azureblob-airgap: non-standard-file-perm usr/share/rclone-azureblob-airgap/azure/rclone-azureblob.conf 0640 != 0644
 
 # maintainer-script-calls-systemctl: necessary for daemon-reload and service management
-rclone-azureblob-airgap: maintainer-script-calls-systemctl postinst:*
-rclone-azureblob-airgap: maintainer-script-calls-systemctl prerm:*
+# lintian reports line numbers; use wildcard via tag-only override
+rclone-azureblob-airgap: maintainer-script-calls-systemctl
