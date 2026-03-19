@@ -44,19 +44,17 @@ apt-get install -y --no-install-recommends \
 
 # Node.js 20 LTS 설치 (jammy/noble 기본 nodejs는 너무 구버전)
 if ! node --version 2>/dev/null | grep -qE "^v(18|20|22)\."; then
-	curl -fsSL https://deb.nodesource.com/setup_20.x | bash - 2>/dev/null
-	apt-get install -y --no-install-recommends nodejs 2>/dev/null
+	curl -fsSL https://deb.nodesource.com/setup_20.x | bash - 2>&1 | tail -5
+	apt-get install -y nodejs 2>/dev/null
 fi
 node --version
+npm --version
 green "기본 도구 설치 완료"
 
 # ── 2. Azurite 설치 및 시작 ───────────────────────────────────────────────────
 step "2. Azurite (Azure Storage Emulator) 설치 및 시작"
-# npm 오류를 stderr 로 출력하면서 실패 시 명확한 메시지 출력
-if ! npm install -g azurite 2>&1; then
-	red "Azurite npm 설치 실패"
-	exit 1
-fi
+npm install -g azurite
+green "Azurite 설치 완료: $(azurite --version 2>/dev/null || npx azurite --version 2>/dev/null || echo 'unknown')"
 mkdir -p /tmp/azurite-data
 
 # Azurite를 127.0.0.1 바인딩으로 시작 (Private Link 모의: 외부 접근 차단)
