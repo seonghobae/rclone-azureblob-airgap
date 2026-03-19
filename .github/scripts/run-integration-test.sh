@@ -48,13 +48,18 @@ if ! node --version 2>/dev/null | grep -qE "^v(18|20|22)\."; then
 	apt-get install -y nodejs 2>/dev/null
 fi
 node --version
-npm --version
+npm --version 2>/dev/null || {
+	apt-get install -y npm 2>/dev/null
+	npm --version
+}
 green "기본 도구 설치 완료"
 
 # ── 2. Azurite 설치 및 시작 ───────────────────────────────────────────────────
 step "2. Azurite (Azure Storage Emulator) 설치 및 시작"
-npm install -g azurite
-green "Azurite 설치 완료: $(azurite --version 2>/dev/null || npx azurite --version 2>/dev/null || echo 'unknown')"
+npm install -g azurite && green "Azurite 설치 완료" || {
+	red "Azurite 설치 실패"
+	exit 1
+}
 mkdir -p /tmp/azurite-data
 
 # Azurite를 127.0.0.1 바인딩으로 시작 (Private Link 모의: 외부 접근 차단)
