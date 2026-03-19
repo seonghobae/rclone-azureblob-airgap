@@ -61,7 +61,17 @@ green "기본 도구 설치 완료 (node=$NODE_VER npm=$NPM_VER)"
 
 # ── 2. Azurite 설치 및 시작 ───────────────────────────────────────────────────
 step "2. Azurite (Azure Storage Emulator) 설치 및 시작"
-npm install -g azurite 2>&1 | tail -10
+# set -o pipefail 환경에서 파이프 오류 전파를 막기 위해 임시 비활성화
+set +o pipefail
+NPM_LOG=$(npm install -g azurite 2>&1)
+NPM_EXIT=$?
+set -o pipefail
+if [ "$NPM_EXIT" -ne 0 ]; then
+	red "Azurite npm 설치 실패 (exit=$NPM_EXIT)"
+	echo "$NPM_LOG" | tail -20
+	exit 1
+fi
+echo "$NPM_LOG" | tail -5
 green "Azurite 설치 완료"
 mkdir -p /tmp/azurite-data
 
