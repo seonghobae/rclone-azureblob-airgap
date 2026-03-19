@@ -199,11 +199,11 @@ jobs:
 
       - name: Verify /etc/rclone layout
         run: |
-          ls -la /etc/rclone/
-          ls -la /etc/rclone/mounts/ || true
-          test -f /etc/rclone/rclone.conf       && echo "rclone.conf OK"
-          test -f /etc/rclone/azure-env.conf    && echo "azure-env.conf OK"
-          test -f /etc/rclone/rclone-azureblob.conf.template && echo "template OK"
+          sudo ls -la /etc/rclone/
+          sudo ls -la /etc/rclone/mounts/ || true
+          sudo test -f /etc/rclone/rclone.conf       && echo "rclone.conf OK"
+          sudo test -f /etc/rclone/azure-env.conf    && echo "azure-env.conf OK"
+          sudo test -f /etc/rclone/rclone-azureblob.conf.template && echo "template OK"
 
       - name: Run verify-mount.sh
         run: |
