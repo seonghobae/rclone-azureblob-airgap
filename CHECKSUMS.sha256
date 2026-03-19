@@ -10,6 +10,11 @@ c7c7fd1ae38935005f6f8f3cd7009c05edc367e77d64620cd68f94d35eafd62e  ./AGENTS.md
 9f9a28661f9128341476db395066a6ef6c867ef918e2d531259a76316bfdfd20  ./azure/conf-examples/azblob-sp.conf
 2e228fffa22e220166e540b98a2b19fd4bfa15733b6c5fdeed4cb8c2f17db9bc  ./azure/rclone-azureblob.conf
 132421438f300e146ded24302566c09d65e87ebda4bee716b831c84676022174  ./azure/README-azureblob.md
+39489ec9875f455a0618e6ea7757f345ac0f8fade9fb794808ebe94c8823adfc  ./debian/changelog
+8eb55dde2d07a5a5faad2b9c5c914cbfcd402c3aa9b0158f4af119a03c9cce13  ./debian/control
+d89e5ac72426492907644b31a894558803f0592bd13cc6a3f892a683f4e7256b  ./debian/copyright
+1cef51233dbd8b4731877aa95bcae707046ec4db15b2ce1067a7d363bdcea1e1  ./debian/rclone-azureblob-airgap.lintian-overrides
+6466ebe72bd81e8652fbff4c668e34a4c718b4700b4c8f62c25d61e2e81350e6  ./debian/rules
 5cba6e67240d9612e2383b6c06fc56728d92b075dac46cbc5d998a329b8130f3  ./docs/engineering/acceptance-criteria.md
 34e62171db87a4bf9c54567bef5a953c20d2ebefae6809769226316d176a0e7e  ./docs/operations/deploy-runbook.md
 346420c0ccc95ca677e9178f82ca43f25d439de1e935b22aa85b671c7ec95f3b  ./docs/workflow/delivery-plan.md
@@ -23,9 +28,9 @@ bed8325b921c22294f14b59e3b8bc1198fdc5ab8c3e60a34bf12714f05d367d6  ./fuse-debs/ja
 d84990ee2b8e6a079ed6f77d7e5fa1fe70e2462bcf9aecd43f4a65a9ae1486c9  ./fuse-debs/noble/libfuse3-3_3.14.0-5build1_arm64.deb
 a1ee04066a2c9335a87bd0bf92cc9cf1cb03e4a0ed143b14cc6c41c728dad89c  ./README.md
 a38ee90a07702d27d99674bfbd57fb1252b71c48420c899087520fba999ee020  ./scripts/configure-azureblob.sh
-6033d42e81b91260f3f0238b437b0f3478d6ef847940cdf8adbcaf268698fd9e  ./scripts/install.sh
+1ffe5de13ffab0ecc2b409c234248c5d27e9f46da5a7dd17c4605eac7982d99d  ./scripts/install.sh
 c7096d1b3d3dc40ef9b491da44453c1e62281a0e752dcc559fe6fa99e0ca4b1d  ./scripts/verify-azureblob.sh
 558dc9531a2fe404d7452686d45100a5efeddf2407fb410f3664c16025697d15  ./scripts/verify-mount.sh
-ffe45677bad3e2db1c81e752de8a0ae43f47eae9e6489c0d2a62a010f07d801b  ./systemd/rclone-azureblob@.service
+4a4e8a28cac20f3f73c47940471225403e244d1d48963c51c8212a64d237b4a4  ./systemd/rclone-azureblob@.service
 b1240fea541bf16d7e6df178a4c2992dfd5ab3d40428f7b5e859027ca1ea20a9  ./systemd/rclone-mount-example.conf
-8becb70e66f78ecd926c3a4849ca37c642aea733403fc415dc963748793988f6  ./systemd/rclone-mount@.service
+53b313ff05809f276816cc9970351ad76b360fa6ebf74d9a5400c47f43ebcb1e  ./systemd/rclone-mount@.service

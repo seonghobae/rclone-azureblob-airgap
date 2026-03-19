@@ -2,34 +2,35 @@
 #
 # Azure Blob Storage 전용 rclone mount 인스턴스 서비스
 #
-# 일반 rclone-mount@.service 와 다른 점:
-#   - Azure Blob 접속 전 네트워크 도달성 확인 (storage account endpoint)
-#   - 환경 변수 파일로 Azure 인증 정보 주입 지원
-#   - 폐쇄망 Private Endpoint 환경을 고려한 타임아웃 설정
-#
 # 사용법:
 #   # 1. 설정 파일 생성
-#   cp azure/conf-examples/azblob-key.conf /etc/rclone/mounts/myblob.conf
-#   vi /etc/rclone/mounts/myblob.conf
+#   sudo install -m 640 /dev/null /etc/rclone/mounts/myblob.conf
+#   sudo tee /etc/rclone/mounts/myblob.conf << 'EOF'
+#   REMOTE=myremote:mycontainer
+#   MOUNTPOINT=/mnt/azureblob
+#   EXTRA_ARGS=--allow-other --vfs-cache-mode writes --vfs-cache-max-size 2G
+#   EOF
 #
 #   # 2. (선택) Azure 인증 환경 변수 별도 파일로 관리
-#   install -m 600 /dev/null /etc/rclone/azure-env.conf
-#   echo 'AZURE_TENANT_ID=...' >> /etc/rclone/azure-env.conf
-#   echo 'AZURE_CLIENT_ID=...' >> /etc/rclone/azure-env.conf
-#   echo 'AZURE_CLIENT_SECRET=...' >> /etc/rclone/azure-env.conf
+#   sudo install -m 600 /dev/null /etc/rclone/azure-env.conf
+#   sudo tee -a /etc/rclone/azure-env.conf << 'EOF'
+#   AZURE_TENANT_ID=...
+#   AZURE_CLIENT_ID=...
+#   AZURE_CLIENT_SECRET=...
+#   EOF
 #
 #   # 3. 서비스 시작
-#   mkdir -p /mnt/myblob
-#   systemctl start  rclone-azureblob@myblob.service
-#   systemctl enable rclone-azureblob@myblob.service
+#   sudo mkdir -p /mnt/azureblob
+#   sudo systemctl start  rclone-azureblob@myblob.service
+#   sudo systemctl enable rclone-azureblob@myblob.service
 
 [Unit]
 Description=rclone Azure Blob mount: %i
 Documentation=https://rclone.org/azureblob/
 After=network-online.target
 Wants=network-online.target
-# 마운트 포인트 디렉토리가 존재해야 시작
-ConditionPathIsDirectory=/run/rclone-azureblob/%i
+# 주의: ConditionPathIsDirectory 는 RuntimeDirectory 생성 전에 평가되므로
+#       /run/rclone-azureblob/%i 를 조건으로 쓰면 항상 실패함 → 제거
 
 [Service]
 Type=notify
@@ -43,11 +44,13 @@ EnvironmentFile=/etc/rclone/mounts/%i.conf
 EnvironmentFile=-/etc/rclone/azure-env.conf
 
 # ── 런타임 준비 ───────────────────────────────────────────────────────────────
+# RuntimeDirectory가 먼저 생성된 후 ExecStartPre가 실행됨
 ExecStartPre=/bin/mkdir -p ${MOUNTPOINT}
-ExecStartPre=/bin/mkdir -p /run/rclone-azureblob/%i
 
 # ── rclone mount 실행 ─────────────────────────────────────────────────────────
-ExecStart=/usr/local/bin/rclone mount \
+# /usr/bin/rclone: deb 설치 시 실제 경로
+# /usr/local/bin/rclone: tarball 설치 또는 심볼릭 링크 경로 (하위 호환)
+ExecStart=/usr/bin/rclone mount \
     --config /etc/rclone/rclone.conf \
     --log-level INFO \
     --log-file /var/log/rclone/azureblob-%i.log \
@@ -72,7 +75,6 @@ ExecStart=/usr/local/bin/rclone mount \
 
 # ── 정지 처리 ─────────────────────────────────────────────────────────────────
 ExecStop=/bin/fusermount3 -u ${MOUNTPOINT}
-ExecStopPost=/bin/rmdir --ignore-fail-on-non-empty /run/rclone-azureblob/%i
 
 # ── 재시작 정책 ───────────────────────────────────────────────────────────────
 Restart=on-failure

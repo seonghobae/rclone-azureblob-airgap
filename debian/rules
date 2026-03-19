@@ -45,28 +45,48 @@ override_dh_auto_install:
 	install -D -m 640 azure/conf-examples/azblob-msi.conf \
 		$(PKG)/usr/share/rclone-azureblob-airgap/azure/conf-examples/azblob-msi.conf
 
-	# ── FUSE3 오프라인 deb 캐시 (아키텍처별) ─────────────────────────────
-	# jammy
-	install -D -m 644 fuse-debs/jammy/libfuse3-3_3.10.5-1build1_$(ARCH).deb \
-		$(PKG)/usr/share/rclone-azureblob-airgap/fuse-debs/jammy/libfuse3-3_3.10.5-1build1_$(ARCH).deb
-	install -D -m 644 fuse-debs/jammy/fuse3_3.10.5-1build1_$(ARCH).deb \
-		$(PKG)/usr/share/rclone-azureblob-airgap/fuse-debs/jammy/fuse3_3.10.5-1build1_$(ARCH).deb
-	# noble
-	install -D -m 644 fuse-debs/noble/libfuse3-3_3.14.0-5build1_$(ARCH).deb \
-		$(PKG)/usr/share/rclone-azureblob-airgap/fuse-debs/noble/libfuse3-3_3.14.0-5build1_$(ARCH).deb
-	install -D -m 644 fuse-debs/noble/fuse3_3.14.0-5build1_$(ARCH).deb \
-		$(PKG)/usr/share/rclone-azureblob-airgap/fuse-debs/noble/fuse3_3.14.0-5build1_$(ARCH).deb
+	# ── FUSE3 오프라인 deb 캐시 (모든 아키텍처 포함) ─────────────────────
+	# amd64+arm64 모두 포함: 폐쇄망에서 amd64 deb 하나로 arm64 VM에도 배포 가능
+	# jammy amd64
+	install -D -m 644 fuse-debs/jammy/libfuse3-3_3.10.5-1build1_amd64.deb \
+		$(PKG)/usr/share/rclone-azureblob-airgap/fuse-debs/jammy/libfuse3-3_3.10.5-1build1_amd64.deb
+	install -D -m 644 fuse-debs/jammy/fuse3_3.10.5-1build1_amd64.deb \
+		$(PKG)/usr/share/rclone-azureblob-airgap/fuse-debs/jammy/fuse3_3.10.5-1build1_amd64.deb
+	# jammy arm64
+	install -D -m 644 fuse-debs/jammy/libfuse3-3_3.10.5-1build1_arm64.deb \
+		$(PKG)/usr/share/rclone-azureblob-airgap/fuse-debs/jammy/libfuse3-3_3.10.5-1build1_arm64.deb
+	install -D -m 644 fuse-debs/jammy/fuse3_3.10.5-1build1_arm64.deb \
+		$(PKG)/usr/share/rclone-azureblob-airgap/fuse-debs/jammy/fuse3_3.10.5-1build1_arm64.deb
+	# noble amd64
+	install -D -m 644 fuse-debs/noble/libfuse3-3_3.14.0-5build1_amd64.deb \
+		$(PKG)/usr/share/rclone-azureblob-airgap/fuse-debs/noble/libfuse3-3_3.14.0-5build1_amd64.deb
+	install -D -m 644 fuse-debs/noble/fuse3_3.14.0-5build1_amd64.deb \
+		$(PKG)/usr/share/rclone-azureblob-airgap/fuse-debs/noble/fuse3_3.14.0-5build1_amd64.deb
+	# noble arm64
+	install -D -m 644 fuse-debs/noble/libfuse3-3_3.14.0-5build1_arm64.deb \
+		$(PKG)/usr/share/rclone-azureblob-airgap/fuse-debs/noble/libfuse3-3_3.14.0-5build1_arm64.deb
+	install -D -m 644 fuse-debs/noble/fuse3_3.14.0-5build1_arm64.deb \
+		$(PKG)/usr/share/rclone-azureblob-airgap/fuse-debs/noble/fuse3_3.14.0-5build1_arm64.deb
 
-	# ── 문서 ──────────────────────────────────────────────────────────────
+	# ── 문서 + copyright ─────────────────────────────────────────────────
 	install -D -m 644 README.md \
 		$(PKG)/usr/share/doc/rclone-azureblob-airgap/README.md
 	install -D -m 644 azure/README-azureblob.md \
 		$(PKG)/usr/share/doc/rclone-azureblob-airgap/README-azureblob.md
+	# copyright 파일: lintian E: no-copyright-file 해결
+	install -D -m 644 debian/copyright \
+		$(PKG)/usr/share/doc/rclone-azureblob-airgap/copyright
 
 	# ── /etc 초기 디렉토리 뼈대 ──────────────────────────────────────────
+	# 0750: rclone 설정 디렉토리 (root 그룹 읽기 가능, 다른 사용자 차단)
+	# 0700: certs/ (인증서 — root 전용)
 	install -d -m 750 $(PKG)/etc/rclone
 	install -d -m 750 $(PKG)/etc/rclone/mounts
 	install -d -m 700 $(PKG)/etc/rclone/certs
+
+	# ── lintian overrides ─────────────────────────────────────────────────
+	install -D -m 644 debian/rclone-azureblob-airgap.lintian-overrides \
+		$(PKG)/usr/share/lintian/overrides/rclone-azureblob-airgap
 
 override_dh_fixperms:
 	dh_fixperms

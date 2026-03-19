@@ -1,0 +1,24 @@
+# lintian overrides for rclone-azureblob-airgap
+#
+# statically-linked-binary: rclone is a Go binary, static linking is intentional
+rclone-azureblob-airgap: statically-linked-binary usr/bin/rclone
+
+# no-manual-page: rclone ships its own --help, man page not bundled by design
+rclone-azureblob-airgap: no-manual-page usr/bin/rclone
+
+# non-standard-dir-perm: /etc/rclone* are intentionally restricted
+# (contain credentials, TLS certs)
+rclone-azureblob-airgap: non-standard-dir-perm etc/rclone/ 0750 != 0755
+rclone-azureblob-airgap: non-standard-dir-perm etc/rclone/certs/ 0700 != 0755
+rclone-azureblob-airgap: non-standard-dir-perm etc/rclone/mounts/ 0750 != 0755
+
+# non-standard-file-perm: azure conf templates contain example credentials,
+# intentionally readable only by owner+group
+rclone-azureblob-airgap: non-standard-file-perm usr/share/rclone-azureblob-airgap/azure/conf-examples/azblob-key.conf 0640 != 0644
+rclone-azureblob-airgap: non-standard-file-perm usr/share/rclone-azureblob-airgap/azure/conf-examples/azblob-msi.conf 0640 != 0644
+rclone-azureblob-airgap: non-standard-file-perm usr/share/rclone-azureblob-airgap/azure/conf-examples/azblob-sp.conf 0640 != 0644
+rclone-azureblob-airgap: non-standard-file-perm usr/share/rclone-azureblob-airgap/azure/rclone-azureblob.conf 0640 != 0644
+
+# maintainer-script-calls-systemctl: necessary for daemon-reload and service management
+rclone-azureblob-airgap: maintainer-script-calls-systemctl postinst:*
+rclone-azureblob-airgap: maintainer-script-calls-systemctl prerm:*

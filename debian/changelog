@@ -1,3 +1,21 @@
+rclone-azureblob-airgap (1.73.2-3) unstable; urgency=high
+
+  * systemd: remove ConditionPathIsDirectory=/run/rclone-azureblob/%i
+    (RuntimeDirectory not yet created at condition evaluation time — service
+    always failed to start with this condition).
+  * systemd: use /usr/bin/rclone (actual deb install path) instead of
+    /usr/local/bin/rclone (symlink) in ExecStart.
+  * scripts/install.sh: fix shell syntax error in for-loop glob with
+    redirect (bash syntax error on line 311).
+  * debian/copyright: add missing copyright file (lintian E: no-copyright-file).
+  * debian/rules: include both amd64+arm64 fuse-debs in each arch package
+    (enables single deb to bootstrap any target arch in airgap scenario).
+  * debian/rules: install lintian-overrides file.
+  * debian/rclone-azureblob-airgap.lintian-overrides: suppress intentional
+    lintian warnings (static binary, restricted permissions, systemctl calls).
+
+ -- seonghobae <seonghobae@users.noreply.github.com>  Thu, 19 Mar 2026 00:00:00 +0000
+
 rclone-azureblob-airgap (1.73.2-2) unstable; urgency=medium
 
   * postinst: auto-install bundled FUSE3 debs on dpkg -i (no extra step).

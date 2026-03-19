@@ -1,15 +1,11 @@
 # /etc/systemd/system/rclone-mount@.service
 #
-# rclone mount 인스턴스 서비스 (template unit)
+# 범용 rclone mount 인스턴스 서비스 (template unit)
+# Azure Blob 전용: rclone-azureblob@.service 사용 권장
 #
 # 사용법:
 #   systemctl start  rclone-mount@<INSTANCE>.service
 #   systemctl enable rclone-mount@<INSTANCE>.service
-#
-# <INSTANCE> 는 /etc/rclone/mounts/<INSTANCE>.conf 파일로 설정합니다.
-# 예시:
-#   systemctl start rclone-mount@s3data.service
-#   → /etc/rclone/mounts/s3data.conf 참조
 #
 # 설정 파일 형식 (/etc/rclone/mounts/<INSTANCE>.conf):
 #   REMOTE=myremote:bucket/path
@@ -20,18 +16,16 @@
 Description=rclone mount: %i
 After=network-online.target
 Wants=network-online.target
-# 마운트 포인트가 실제 디렉토리로 존재해야 함
-ConditionPathIsDirectory=/run/rclone-mount/%i
 
 [Service]
 Type=notify
 EnvironmentFile=/etc/rclone/mounts/%i.conf
 
-# 마운트 포인트 런타임 디렉토리 생성 (실제로는 conf의 MOUNTPOINT 사용)
+# RuntimeDirectory가 먼저 생성된 후 ExecStartPre가 실행됨
 ExecStartPre=/bin/mkdir -p ${MOUNTPOINT}
-ExecStartPre=/bin/mkdir -p /run/rclone-mount/%i
 
-ExecStart=/usr/local/bin/rclone mount \
+# /usr/bin/rclone: deb 설치 경로 (tarball은 /usr/local/bin/rclone 심볼릭 링크)
+ExecStart=/usr/bin/rclone mount \
     --config /etc/rclone/rclone.conf \
     --log-level INFO \
     --log-file /var/log/rclone/%i.log \
@@ -45,19 +39,15 @@ ExecStart=/usr/local/bin/rclone mount \
     ${REMOTE} ${MOUNTPOINT}
 
 ExecStop=/bin/fusermount3 -u ${MOUNTPOINT}
-ExecStopPost=/bin/rmdir /run/rclone-mount/%i
 
-# 재시작 정책
 Restart=on-failure
 RestartSec=5s
 StartLimitInterval=60s
 StartLimitBurst=3
 
-# 리소스 제한
 LimitNOFILE=1048576
 TimeoutStopSec=30
 
-# 로그 디렉토리 준비
 RuntimeDirectory=rclone-mount/%i
 RuntimeDirectoryMode=0755
 LogsDirectory=rclone
