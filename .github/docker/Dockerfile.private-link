@@ -16,7 +16,8 @@
 FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV RCLONE_VERSION=1.73.2
+# Note: Do NOT use RCLONE_VERSION — rclone treats it as --version flag
+ENV RCLONE_VER=1.73.2
 
 # ── 기본 도구 + Node.js 20 LTS 설치 ──────────────────────────────────────────
 RUN apt-get update -qq && \
