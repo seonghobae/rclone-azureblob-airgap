@@ -40,7 +40,7 @@ PY
 - `Release`
   - 태그 아티팩트 빌드
   - amd64/arm64 smoke-release
-  - reusable integration workflow 재실행
+  - tagged `amd64` `.deb` 를 설치하는 reusable integration workflow 재실행
   - 위 검증이 모두 성공할 때만 GitHub Release 생성
 
 ## 금지 사항
