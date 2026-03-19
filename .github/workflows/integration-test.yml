@@ -131,14 +131,13 @@ jobs:
       - name: Test Account Key config generation (non-interactive)
         run: |
           CONF=$(mktemp /tmp/rclone-test-XXXXXX.conf)
-          # 비인터랙티브: 모든 입력을 echo로 파이프
-          printf 'testremote\nN\nmystorageaccount\nn\n1\nfakeBase64Key==\n16\n4M\nhot\n' \
+          # 입력 순서: remote이름 / account이름 / PrivateEndpoint?(n) / 인증방식(1) / Key / 업로드병렬도 / 청크 / 티어
+          printf 'testremote\nmystorageaccount\nn\n1\nfakeBase64Key==\n16\n4M\nhot\n' \
             | bash scripts/configure-azureblob.sh --conf "$CONF" 2>&1 || true
 
-          # conf 파일에 필수 항목이 생성됐는지 확인
           if grep -q "\[testremote\]" "$CONF" && grep -q "type.*=.*azureblob" "$CONF"; then
-            echo "PASS: configure-azureblob.sh 생성 성공"
-            grep -v "key\s*=" "$CONF"  # key 제외 출력
+            echo "PASS: configure-azureblob.sh Account Key 설정 성공"
+            grep -v "key\s*=" "$CONF"
           else
             echo "FAIL: conf 파일 내용:"
             cat "$CONF"
@@ -150,7 +149,8 @@ jobs:
         run: |
           CONF=$(mktemp /tmp/rclone-test-XXXXXX.conf)
           CONN="DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
-          printf 'conntest\nN\ndevstoreaccount1\nn\n3\n%s\n16\n4M\nhot\n' "$CONN" \
+          # 입력 순서: remote이름 / account이름 / PrivateEndpoint?(n) / 인증방식(3=ConnStr) / ConnStr / 업로드병렬도 / 청크 / 티어
+          printf 'conntest\ndevstoreaccount1\nn\n3\n%s\n16\n4M\nhot\n' "$CONN" \
             | bash scripts/configure-azureblob.sh --conf "$CONF" 2>&1 || true
 
           if grep -q "connection_string" "$CONF"; then

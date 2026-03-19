@@ -126,8 +126,8 @@ DISABLE_DISCOVERY="disable_instance_discovery = true"
 case "$AUTH_CHOICE" in
 1)
 	ask "Storage Account Key (Base64 인코딩된 키):"
-	read -rs ACCOUNT_KEY
-	echo
+	# -s 옵션은 tty 전용 — 파이프/비인터랙티브 환경 모두 호환되도록 -r 만 사용
+	read -r ACCOUNT_KEY
 	[[ -z "$ACCOUNT_KEY" ]] && fail "Account Key는 필수입니다."
 	AUTH_BLOCK="key                  = ${ACCOUNT_KEY}"
 	;;
@@ -152,8 +152,7 @@ case "$AUTH_CHOICE" in
 	ask "Client ID (앱 등록 클라이언트 ID, GUID):"
 	read -r CLIENT_ID
 	ask "Client Secret:"
-	read -rs CLIENT_SECRET
-	echo
+	read -r CLIENT_SECRET
 	[[ -z "$TENANT_ID" || -z "$CLIENT_ID" || -z "$CLIENT_SECRET" ]] && fail "Tenant ID, Client ID, Client Secret 모두 필수입니다."
 	AUTH_BLOCK="tenant               = ${TENANT_ID}
 client_id            = ${CLIENT_ID}
@@ -167,19 +166,16 @@ client_secret        = ${CLIENT_SECRET}"
 	ask "인증서 파일 경로 (PEM 또는 PKCS12, 예: /etc/rclone/certs/sp-cert.pem):"
 	read -r CERT_PATH
 	ask "인증서 암호 (없으면 Enter):"
-	read -rs CERT_PASS
-	echo
+	read -r CERT_PASS
 
 	if [[ -z "$CERT_PASS" ]]; then
 		CERT_PASS_LINE=""
 	else
-		# rclone obscure 로 암호화
 		if command -v rclone &>/dev/null; then
 			OBS_PASS=$(rclone obscure "$CERT_PASS")
 			CERT_PASS_LINE="client_certificate_password = ${OBS_PASS}"
 		else
 			warn "rclone 이 PATH에 없어 암호를 obscure 처리할 수 없습니다."
-			warn "나중에 수동으로: rclone obscure '<암호>' 실행 후 conf에 추가"
 			CERT_PASS_LINE="# client_certificate_password = <rclone obscure 실행 결과>"
 		fi
 	fi
