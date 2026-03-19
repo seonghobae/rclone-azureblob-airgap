@@ -1,3 +1,16 @@
+rclone-azureblob-airgap (1.73.2-5) unstable; urgency=medium
+
+  * README.md, ARCHITECTURE.md: replace hardcoded v1.73.2-2 with v1.73.2-4 /
+    latest-based download snippet (auto-detect ARCH+VERSION).
+  * scripts/install.sh: skip install_rclone() when rclone already installed
+    (deb install scenario — rclone already at /usr/bin/rclone via postinst).
+  * build-deb.yml smoke-test: hard assert rclone-mount-example.conf exists
+    at /usr/share/rclone-azureblob-airgap/examples/.
+  * docs/workflow/delivery-plan.md: update version examples, add auto-detect
+    download snippet for airgap VM upgrade.
+
+ -- seonghobae <seonghobae@users.noreply.github.com>  Thu, 19 Mar 2026 00:00:00 +0000
+
 rclone-azureblob-airgap (1.73.2-4) unstable; urgency=medium
 
   * debian/rules: bundle rclone-mount-example.conf in deb

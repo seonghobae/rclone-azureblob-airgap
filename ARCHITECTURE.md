@@ -11,13 +11,14 @@
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  GitHub Release (인터넷 되는 머신에서 다운로드)                  │
-│  rclone-azureblob-airgap_1.73.2-2_{amd64,arm64}.deb             │
+│  rclone-azureblob-airgap_{VER}_{amd64,arm64}.deb                │
+│  (최신: v1.73.2-4)                                               │
 └──────────────────────────┬──────────────────────────────────────┘
                            │ scp / USB / 내부 파일 서버
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  Airgapped Ubuntu VM                                            │
-│  sudo dpkg -i rclone-azureblob-airgap_1.73.2-2_amd64.deb       │
+│  sudo dpkg -i rclone-azureblob-airgap_{VER}_{ARCH}.deb          │
 │                                                                 │
 │  postinst configure:                                            │
 │  ① install_fuse3_offline()   — 번들 fuse-debs 자동 dpkg -i     │

@@ -154,8 +154,15 @@ detect_arch
 # ── rclone 바이너리 설치 ──────────────────────────────────────────────────────
 install_rclone() {
 	local bin_src="$PKG_ROOT/rclone-bins/rclone-linux-${ARCH}"
+
+	# deb 설치 후 시나리오: rclone 이미 /usr/bin/rclone 에 있고 rclone-bins/ 없음
+	# → 설치 건너뜀 (postinst 가 이미 처리)
 	if [[ ! -f "$bin_src" ]]; then
-		fail "rclone 바이너리를 찾을 수 없습니다: $bin_src"
+		if command -v rclone &>/dev/null; then
+			ok "rclone 이미 설치됨: $(rclone version 2>/dev/null | head -1) — 건너뜀"
+			return 0
+		fi
+		fail "rclone 바이너리를 찾을 수 없습니다: $bin_src (tarball에 rclone-bins/rclone-linux-${ARCH} 필요)"
 	fi
 
 	info "rclone 바이너리 설치: $bin_src → $INSTALL_PREFIX/rclone"

@@ -208,8 +208,15 @@ jobs:
 
       - name: Verify mount example conf bundled
         run: |
-          ls -la /usr/share/rclone-azureblob-airgap/ || true
-          # rclone-mount-example.conf 은 /etc/rclone/mounts/ 안에 example 파일로 배치됨
+          echo "--- /usr/share/rclone-azureblob-airgap/ top-level ---"
+          ls -la /usr/share/rclone-azureblob-airgap/
+          echo "--- examples/ ---"
+          ls -la /usr/share/rclone-azureblob-airgap/examples/ || true
+          # Hard assertion: rclone-mount-example.conf must be in examples/
+          test -f /usr/share/rclone-azureblob-airgap/examples/rclone-mount-example.conf && \
+            echo "PASS: rclone-mount-example.conf bundled in examples/" || \
+            { echo "FAIL: rclone-mount-example.conf not found in examples/"; exit 1; }
+          # postinst배포 확인: azblob example confs in /etc/rclone/mounts/
           sudo ls -la /etc/rclone/mounts/ || true
 
       - name: Verify systemd units
