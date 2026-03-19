@@ -128,7 +128,11 @@ push/PR → main
 push → tag v*
   └── Release
         ├── Build release deb {amd64,arm64}
-        └── Create GitHub Release (deb + sha256 업로드)
+        ├── Smoke release {amd64,arm64}
+        │     ├── dpkg -i on tagged artifact
+        │     ├── FUSE3 auto-install verification
+        │     └── verify-mount.sh, verify-azureblob.sh (--allow-missing-fuse)
+        └── Create GitHub Release (only after smoke-release success)
 ```
 
 ---

@@ -1,3 +1,12 @@
+rclone-azureblob-airgap (1.73.2-10) unstable; urgency=medium
+
+  * release.yml: add amd64+arm64 smoke-release gate so GitHub Release is
+    created only after tagged artifacts are actually install-verified.
+  * docs: reflect release gating in acceptance criteria, architecture and
+    delivery plan.
+
+ -- seonghobae <seonghobae@users.noreply.github.com>  Thu, 19 Mar 2026 00:00:00 +0000
+
 rclone-azureblob-airgap (1.73.2-9) unstable; urgency=medium
 
   * docs: remove the last stale hardcoded package revision from

@@ -88,10 +88,63 @@ jobs:
             ${{ env.PKG_NAME }}_*.deb
             ${{ env.PKG_NAME }}_*.deb.sha256
 
+  smoke-release:
+    name: Smoke release (${{ matrix.arch }} on ${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
+    needs: build-release-debs
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-22.04
+            artifact: release-deb-amd64
+            codename: jammy
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            artifact: release-deb-arm64
+            codename: noble
+
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - name: Download release deb artifact
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/
+
+      - name: Install deb from tagged build
+        run: |
+          sudo dpkg -i --force-depends dist/*.deb
+
+      - name: Verify release package install
+        run: |
+          dpkg --print-architecture | grep -x "${{ matrix.arch }}"
+          . /etc/os-release && test "$VERSION_CODENAME" = "${{ matrix.codename }}"
+          rclone version
+          dpkg -l libfuse3-3 | grep "^ii"
+          dpkg -l fuse3 | grep "^ii"
+          test -f /etc/fuse.conf && grep -q "user_allow_other" /etc/fuse.conf
+
+      - name: Verify bundled assets
+        run: |
+          test -f /usr/share/rclone-azureblob-airgap/examples/rclone-mount-example.conf
+          COUNT=$(find /usr/share/rclone-azureblob-airgap/fuse-debs/ -name "*.deb" | wc -l)
+          [ "$COUNT" -eq 8 ]
+
+      - name: Run verify-mount.sh
+        run: |
+          sudo bash /usr/share/rclone-azureblob-airgap/scripts/verify-mount.sh --allow-missing-fuse
+
+      - name: Run verify-azureblob.sh (no remote)
+        run: |
+          bash /usr/share/rclone-azureblob-airgap/scripts/verify-azureblob.sh --allow-missing-fuse
+
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-22.04
-    needs: build-release-debs
+    needs: [build-release-debs, smoke-release]
     permissions:
       contents: write
 
