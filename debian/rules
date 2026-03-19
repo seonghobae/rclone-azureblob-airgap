@@ -83,3 +83,7 @@ override_dh_strip:
 override_dh_shlibdeps:
 	# Go 정적 바이너리는 shlibdeps 불필요
 	@true
+
+override_dh_makeshlibs:
+	# Go 바이너리는 shared library가 없으므로 objdump 크로스툴 불필요
+	@true
