@@ -57,7 +57,7 @@ jobs:
 
       # ── Docker buildx (for --privileged + /dev/fuse) ──────────────────────
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4.0.0
 
       # ── 통합 테스트 실행 ──────────────────────────────────────────────────
       - name: Run integration test in Docker

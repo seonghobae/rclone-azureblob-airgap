@@ -1,3 +1,10 @@
+rclone-azureblob-airgap (1.73.2-8) unstable; urgency=medium
+
+  * GitHub Actions: upgrade docker/setup-buildx-action to v4.0.0
+    (Node 24 runtime) to remove the final Node 20 deprecation warning.
+
+ -- seonghobae <seonghobae@users.noreply.github.com>  Thu, 19 Mar 2026 00:00:00 +0000
+
 rclone-azureblob-airgap (1.73.2-7) unstable; urgency=medium
 
   * GitHub Actions: upgrade to Node 24 compatible action versions
