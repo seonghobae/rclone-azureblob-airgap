@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 env:
-  RCLONE_VERSION: "1.73.2"
+  RCLONE_VER: "1.73.2"
   PKG_NAME: "rclone-azureblob-airgap"
 
 jobs:
@@ -31,11 +31,11 @@ jobs:
 
       - name: Download rclone binary
         run: |
-          ZIP="rclone-v${RCLONE_VERSION}-linux-${{ matrix.arch }}.zip"
+          ZIP="rclone-v${RCLONE_VER}-linux-${{ matrix.arch }}.zip"
           curl -fsSL -o "${ZIP}" \
-            "https://downloads.rclone.org/v${RCLONE_VERSION}/${ZIP}"
+            "https://downloads.rclone.org/v${RCLONE_VER}/${ZIP}"
           EXPECTED=$(curl -fsSL \
-            "https://downloads.rclone.org/v${RCLONE_VERSION}/SHA256SUMS" \
+            "https://downloads.rclone.org/v${RCLONE_VER}/SHA256SUMS" \
             | grep "${ZIP}" | awk '{print $1}')
           ACTUAL=$(sha256sum "${ZIP}" | awk '{print $1}')
           [ "${EXPECTED}" = "${ACTUAL}" ] || { echo "::error::체크섬 불일치"; exit 1; }
@@ -57,7 +57,7 @@ jobs:
             echo "${PKG_NAME} (${VER}) stable; urgency=medium"
             echo ""
             echo "  * Release ${VER}"
-            echo "  * rclone ${RCLONE_VERSION} binary"
+            echo "  * rclone ${RCLONE_VER} binary"
             echo "  * Azure Blob Storage Private Link support"
             echo ""
             echo " -- github-actions <actions@github.com>  ${DATE}"
@@ -118,7 +118,7 @@ jobs:
           Azure Blob Storage 폐쇄망(Air-gapped) Ubuntu VM용 rclone 부트스트랩 패키지
 
           ### 포함 내용
-          - **rclone ${RCLONE_VERSION}** (amd64 / arm64)
+          - **rclone ${RCLONE_VER}** (amd64 / arm64)
           - **FUSE3 오프라인 deb**: Ubuntu 22.04(jammy) / 24.04(noble) × amd64/arm64
           - **Azure Blob 인증 템플릿**: Account Key, SAS URL, Connection String, Service Principal, MSI
           - **systemd 유닛**: \`rclone-azureblob@.service\`

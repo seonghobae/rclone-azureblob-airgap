@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  RCLONE_VERSION: "1.73.2"
+  RCLONE_VER: "1.73.2"
   PKG_NAME: "rclone-azureblob-airgap"
 
 jobs:
@@ -27,8 +27,8 @@ jobs:
 
       - name: Download rclone binary
         run: |
-          BASE="https://downloads.rclone.org/v${RCLONE_VERSION}"
-          ZIP="rclone-v${RCLONE_VERSION}-linux-${{ matrix.arch }}.zip"
+          BASE="https://downloads.rclone.org/v${RCLONE_VER}"
+          ZIP="rclone-v${RCLONE_VER}-linux-${{ matrix.arch }}.zip"
           curl -fsSL -o "${ZIP}" "${BASE}/${ZIP}"
 
           # 공식 체크섬 검증
@@ -88,7 +88,7 @@ jobs:
             echo "PKG_VERSION=${TAG}" >> "$GITHUB_OUTPUT"
           else
             SHORT_SHA="${GITHUB_SHA::8}"
-            echo "PKG_VERSION=${RCLONE_VERSION}-0git${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+            echo "PKG_VERSION=${RCLONE_VER}-0git${SHORT_SHA}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Update debian/changelog version

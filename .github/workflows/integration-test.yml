@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  RCLONE_VERSION: "1.73.2"
+  RCLONE_VER: "1.73.2"
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────────
@@ -48,9 +48,9 @@ jobs:
       # ── rclone 바이너리 다운로드 ──────────────────────────────────────────
       - name: Download rclone binary (amd64)
         run: |
-          ZIP="rclone-v${RCLONE_VERSION}-linux-amd64.zip"
+          ZIP="rclone-v${RCLONE_VER}-linux-amd64.zip"
           curl -fsSL -o "${ZIP}" \
-            "https://downloads.rclone.org/v${RCLONE_VERSION}/${ZIP}"
+            "https://downloads.rclone.org/v${RCLONE_VER}/${ZIP}"
           unzip -j "${ZIP}" "*/rclone" -d rclone-bins/
           mv rclone-bins/rclone rclone-bins/rclone-linux-amd64
           chmod 755 rclone-bins/rclone-linux-amd64
@@ -85,9 +85,9 @@ jobs:
 
       - name: Download rclone binary
         run: |
-          ZIP="rclone-v${RCLONE_VERSION}-linux-amd64.zip"
+          ZIP="rclone-v${RCLONE_VER}-linux-amd64.zip"
           curl -fsSL -o "${ZIP}" \
-            "https://downloads.rclone.org/v${RCLONE_VERSION}/${ZIP}"
+            "https://downloads.rclone.org/v${RCLONE_VER}/${ZIP}"
           unzip -j "${ZIP}" "*/rclone" -d rclone-bins/
           mv rclone-bins/rclone rclone-bins/rclone-linux-amd64
           chmod 755 rclone-bins/rclone-linux-amd64
@@ -120,9 +120,9 @@ jobs:
 
       - name: Download rclone binary
         run: |
-          ZIP="rclone-v${RCLONE_VERSION}-linux-amd64.zip"
+          ZIP="rclone-v${RCLONE_VER}-linux-amd64.zip"
           curl -fsSL -o "${ZIP}" \
-            "https://downloads.rclone.org/v${RCLONE_VERSION}/${ZIP}"
+            "https://downloads.rclone.org/v${RCLONE_VER}/${ZIP}"
           unzip -j "${ZIP}" "*/rclone" -d rclone-bins/
           mv rclone-bins/rclone rclone-bins/rclone-linux-amd64
           chmod 755 rclone-bins/rclone-linux-amd64
