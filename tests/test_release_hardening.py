@@ -79,6 +79,10 @@ class ReleaseHardeningTests(unittest.TestCase):
             verify,
         )
 
+    def test_verify_azureblob_defines_info_helper(self) -> None:
+        verify = read_text("scripts/verify-azureblob.sh")
+        self.assertIn("info() {", verify)
+
     def test_required_canonical_docs_exist(self) -> None:
         required = [
             "docs/engineering/acceptance-criteria.md",

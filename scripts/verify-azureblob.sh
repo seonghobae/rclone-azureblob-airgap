@@ -38,6 +38,9 @@ check_warn() {
 	echo -e "  ${YELLOW}[WARN]${NC} $*"
 	WARN=$((WARN + 1))
 }
+info() {
+	echo -e "  ${BLUE}[INFO]${NC} $*"
+}
 section() { echo -e "\n${BLUE}── $* ──${NC}"; }
 
 # ── 인수 파싱 ─────────────────────────────────────────────────────────────────
