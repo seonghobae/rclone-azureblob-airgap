@@ -1,0 +1,11 @@
+rclone-azureblob-airgap (1.73.2-1) unstable; urgency=medium
+
+  * Initial release.
+  * rclone v1.73.2 binary for amd64/arm64.
+  * Offline FUSE3 packages for Ubuntu 22.04 (jammy) and 24.04 (noble).
+  * Azure Blob Storage configuration templates for all auth methods.
+  * systemd rclone-azureblob@.service instance template.
+  * disable_instance_discovery support for Azure Private Link environments.
+  * Interactive configure-azureblob.sh and verify-azureblob.sh scripts.
+
+ -- seonghobae <seonghobae@users.noreply.github.com>  Thu, 19 Mar 2026 00:00:00 +0000

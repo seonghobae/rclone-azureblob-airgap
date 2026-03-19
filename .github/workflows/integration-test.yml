@@ -1,0 +1,161 @@
+name: Integration test (Docker / Azure Private Link mock)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  RCLONE_VERSION: "1.73.2"
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Docker 컨테이너 안에서 rclone + FUSE + Azure Blob Storage 통합 테스트
+  #
+  # 실제 Azure 환경 없이 Azurite (Azure Storage Emulator) 를 Private Link 대역으로
+  # 모의합니다:
+  #   - Azurite: 내부 네트워크 전용으로 바인딩
+  #   - /etc/hosts: <account>.blob.core.windows.net → 127.0.0.1 (Private DNS 모의)
+  #   - rclone: disable_instance_discovery=true, endpoint=http://127.0.0.1:10000/devstoreaccount1
+  #
+  # 테스트 범위:
+  #   1. deb 패키지 설치 검증
+  #   2. FUSE3 오프라인 deb 설치
+  #   3. rclone azureblob remote 설정 (Connection String → Azurite)
+  #   4. 컨테이너 목록 / 오브젝트 업로드 / 다운로드
+  #   5. rclone mount (FUSE, --vfs-cache-mode writes)
+  #   6. 마운트 포인트에서 파일 읽기/쓰기
+  #   7. systemd 없이 수동 마운트 cleanup 검증
+  # ─────────────────────────────────────────────────────────────────────────────
+  docker-integration:
+    name: Docker integration test (${{ matrix.ubuntu }})
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu: [jammy, noble]
+        include:
+          - ubuntu: jammy
+            image: ubuntu:22.04
+          - ubuntu: noble
+            image: ubuntu:24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── rclone 바이너리 다운로드 ──────────────────────────────────────────
+      - name: Download rclone binary (amd64)
+        run: |
+          ZIP="rclone-v${RCLONE_VERSION}-linux-amd64.zip"
+          curl -fsSL -o "${ZIP}" \
+            "https://downloads.rclone.org/v${RCLONE_VERSION}/${ZIP}"
+          unzip -j "${ZIP}" "*/rclone" -d rclone-bins/
+          mv rclone-bins/rclone rclone-bins/rclone-linux-amd64
+          chmod 755 rclone-bins/rclone-linux-amd64
+
+      # ── Docker buildx (for --privileged + /dev/fuse) ──────────────────────
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ── 통합 테스트 실행 ──────────────────────────────────────────────────
+      - name: Run integration test in Docker
+        run: |
+          docker run \
+            --rm \
+            --privileged \
+            --device /dev/fuse \
+            --cap-add SYS_ADMIN \
+            --security-opt apparmor:unconfined \
+            -v "$(pwd):/workspace:ro" \
+            -e UBUNTU_CODENAME="${{ matrix.ubuntu }}" \
+            ${{ matrix.image }} \
+            bash -c "$(cat .github/scripts/run-integration-test.sh)"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Azure Private Link 환경 모의 — 네트워크 격리 테스트
+  # Docker network none → hosts 파일 조작으로 Private DNS 동작 검증
+  # ─────────────────────────────────────────────────────────────────────────────
+  private-link-mock:
+    name: Private Link DNS mock test
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download rclone binary
+        run: |
+          ZIP="rclone-v${RCLONE_VERSION}-linux-amd64.zip"
+          curl -fsSL -o "${ZIP}" \
+            "https://downloads.rclone.org/v${RCLONE_VERSION}/${ZIP}"
+          unzip -j "${ZIP}" "*/rclone" -d rclone-bins/
+          mv rclone-bins/rclone rclone-bins/rclone-linux-amd64
+          chmod 755 rclone-bins/rclone-linux-amd64
+
+      - name: Build private-link test image
+        run: |
+          docker build \
+            -f .github/docker/Dockerfile.private-link \
+            -t rclone-private-link-test \
+            .
+
+      - name: Run private-link mock test
+        run: |
+          docker run \
+            --rm \
+            --privileged \
+            --device /dev/fuse \
+            --cap-add SYS_ADMIN \
+            --security-opt apparmor:unconfined \
+            rclone-private-link-test
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # configure-azureblob.sh 비인터랙티브 모드 테스트
+  # ─────────────────────────────────────────────────────────────────────────────
+  configure-script-test:
+    name: configure-azureblob.sh non-interactive test
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download rclone binary
+        run: |
+          ZIP="rclone-v${RCLONE_VERSION}-linux-amd64.zip"
+          curl -fsSL -o "${ZIP}" \
+            "https://downloads.rclone.org/v${RCLONE_VERSION}/${ZIP}"
+          unzip -j "${ZIP}" "*/rclone" -d rclone-bins/
+          mv rclone-bins/rclone rclone-bins/rclone-linux-amd64
+          chmod 755 rclone-bins/rclone-linux-amd64
+          sudo install -m 755 rclone-bins/rclone-linux-amd64 /usr/local/bin/rclone
+
+      - name: Test Account Key config generation (non-interactive)
+        run: |
+          CONF=$(mktemp /tmp/rclone-test-XXXXXX.conf)
+          # 비인터랙티브: 모든 입력을 echo로 파이프
+          printf 'testremote\nN\nmystorageaccount\nn\n1\nfakeBase64Key==\n16\n4M\nhot\n' \
+            | bash scripts/configure-azureblob.sh --conf "$CONF" 2>&1 || true
+
+          # conf 파일에 필수 항목이 생성됐는지 확인
+          if grep -q "\[testremote\]" "$CONF" && grep -q "type.*=.*azureblob" "$CONF"; then
+            echo "PASS: configure-azureblob.sh 생성 성공"
+            grep -v "key\s*=" "$CONF"  # key 제외 출력
+          else
+            echo "FAIL: conf 파일 내용:"
+            cat "$CONF"
+            exit 1
+          fi
+          rm -f "$CONF"
+
+      - name: Test connection string config generation (non-interactive)
+        run: |
+          CONF=$(mktemp /tmp/rclone-test-XXXXXX.conf)
+          CONN="DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
+          printf 'conntest\nN\ndevstoreaccount1\nn\n3\n%s\n16\n4M\nhot\n' "$CONN" \
+            | bash scripts/configure-azureblob.sh --conf "$CONF" 2>&1 || true
+
+          if grep -q "connection_string" "$CONF"; then
+            echo "PASS: Connection String 설정 성공"
+          else
+            echo "FAIL"; cat "$CONF"; exit 1
+          fi
+          rm -f "$CONF"

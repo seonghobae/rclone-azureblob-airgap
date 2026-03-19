@@ -1,0 +1,157 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  RCLONE_VERSION: "1.73.2"
+  PKG_NAME: "rclone-azureblob-airgap"
+
+jobs:
+  build-release-debs:
+    name: Build release deb (${{ matrix.arch }})
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    outputs:
+      version: ${{ steps.version.outputs.PKG_VERSION }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Derive version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          echo "PKG_VERSION=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Version: ${TAG}"
+
+      - name: Download rclone binary
+        run: |
+          ZIP="rclone-v${RCLONE_VERSION}-linux-${{ matrix.arch }}.zip"
+          curl -fsSL -o "${ZIP}" \
+            "https://downloads.rclone.org/v${RCLONE_VERSION}/${ZIP}"
+          EXPECTED=$(curl -fsSL \
+            "https://downloads.rclone.org/v${RCLONE_VERSION}/SHA256SUMS" \
+            | grep "${ZIP}" | awk '{print $1}')
+          ACTUAL=$(sha256sum "${ZIP}" | awk '{print $1}')
+          [ "${EXPECTED}" = "${ACTUAL}" ] || { echo "::error::체크섬 불일치"; exit 1; }
+          unzip -j "${ZIP}" "*/rclone" -d rclone-bins/
+          mv rclone-bins/rclone rclone-bins/rclone-linux-${{ matrix.arch }}
+          chmod 755 rclone-bins/rclone-linux-${{ matrix.arch }}
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            debhelper devscripts dpkg-dev fakeroot
+
+      - name: Update changelog
+        run: |
+          VER="${{ steps.version.outputs.PKG_VERSION }}"
+          DATE=$(date -R)
+          {
+            echo "${PKG_NAME} (${VER}) stable; urgency=medium"
+            echo ""
+            echo "  * Release ${VER}"
+            echo "  * rclone ${RCLONE_VERSION} binary"
+            echo "  * Azure Blob Storage Private Link support"
+            echo ""
+            echo " -- github-actions <actions@github.com>  ${DATE}"
+            echo ""
+            cat debian/changelog
+          } > debian/changelog.new
+          mv debian/changelog.new debian/changelog
+
+      - name: Build deb
+        run: |
+          fakeroot dpkg-buildpackage -b -us -uc --host-arch=${{ matrix.arch }}
+
+      - name: Collect deb
+        run: |
+          VER="${{ steps.version.outputs.PKG_VERSION }}"
+          DEB=$(find .. -maxdepth 1 -name "${PKG_NAME}_*.deb" | head -1 || \
+                find . -maxdepth 2 -name "${PKG_NAME}_*.deb" | head -1)
+          FINAL="${PKG_NAME}_${VER}_${{ matrix.arch }}.deb"
+          cp "$DEB" "$FINAL"
+          sha256sum "$FINAL" > "${FINAL}.sha256"
+          echo "DEB=${FINAL}" >> "$GITHUB_ENV"
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-deb-${{ matrix.arch }}
+          path: |
+            ${{ env.PKG_NAME }}_*.deb
+            ${{ env.PKG_NAME }}_*.deb.sha256
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-22.04
+    needs: build-release-debs
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all deb artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-deb-*
+          merge-multiple: true
+          path: dist/
+
+      - name: List dist/
+        run: ls -lh dist/
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          VER="${GITHUB_REF#refs/tags/v}"
+          cat > release-notes.md << EOF
+          ## rclone-azureblob-airgap ${VER}
+
+          Azure Blob Storage 폐쇄망(Air-gapped) Ubuntu VM용 rclone 부트스트랩 패키지
+
+          ### 포함 내용
+          - **rclone ${RCLONE_VERSION}** (amd64 / arm64)
+          - **FUSE3 오프라인 deb**: Ubuntu 22.04(jammy) / 24.04(noble) × amd64/arm64
+          - **Azure Blob 인증 템플릿**: Account Key, SAS URL, Connection String, Service Principal, MSI
+          - **systemd 유닛**: \`rclone-azureblob@.service\`
+          - **Azure Private Link** 대응: \`disable_instance_discovery = true\` 기본값
+
+          ### 설치
+
+          \`\`\`bash
+          # 1. deb 다운로드 (인터넷 되는 머신)
+          curl -LO https://github.com/seonghobae/rclone-azureblob-airgap/releases/download/v${VER}/rclone-azureblob-airgap_${VER}_amd64.deb
+
+          # 2. VM으로 전송 후 설치
+          sudo dpkg -i --force-depends rclone-azureblob-airgap_${VER}_amd64.deb
+
+          # 3. Azure Blob 설정
+          bash /usr/share/rclone-azureblob-airgap/scripts/configure-azureblob.sh
+
+          # 4. 검증
+          bash /usr/share/rclone-azureblob-airgap/scripts/verify-azureblob.sh --remote <이름>
+          \`\`\`
+
+          ### Private Link 설정 요점
+          모든 설정에 \`disable_instance_discovery = true\` 가 포함되어
+          \`login.microsoft.com\` 메타데이터 조회 없이 동작합니다.
+          EOF
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER="${GITHUB_REF#refs/tags/v}"
+          gh release create "v${VER}" \
+            --title "rclone-azureblob-airgap v${VER}" \
+            --notes-file release-notes.md \
+            dist/*.deb \
+            dist/*.sha256

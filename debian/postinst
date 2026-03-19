@@ -1,0 +1,96 @@
+#!/bin/bash
+# debian/postinst — 패키지 설치 후 처리
+set -e
+
+SHARE_DIR="/usr/share/rclone-azureblob-airgap"
+
+case "$1" in
+  configure)
+    # ── fuse 그룹 생성 ────────────────────────────────────────────────────
+    if ! getent group fuse > /dev/null 2>&1; then
+      groupadd --system fuse
+      echo "[rclone-airgap] fuse 그룹 생성됨"
+    fi
+
+    # ── /etc/fuse.conf user_allow_other ───────────────────────────────────
+    if [ ! -f /etc/fuse.conf ]; then
+      echo "user_allow_other" > /etc/fuse.conf
+      echo "[rclone-airgap] /etc/fuse.conf 생성 (user_allow_other)"
+    elif ! grep -q "^user_allow_other" /etc/fuse.conf; then
+      echo "user_allow_other" >> /etc/fuse.conf
+      echo "[rclone-airgap] /etc/fuse.conf 에 user_allow_other 추가"
+    fi
+
+    # ── /etc/rclone 권한 ──────────────────────────────────────────────────
+    chmod 750 /etc/rclone /etc/rclone/mounts 2>/dev/null || true
+    chmod 700 /etc/rclone/certs 2>/dev/null || true
+
+    # ── azure-env.conf 뼈대 (없을 때만) ──────────────────────────────────
+    if [ ! -f /etc/rclone/azure-env.conf ]; then
+      install -m 600 /dev/null /etc/rclone/azure-env.conf
+      cat >> /etc/rclone/azure-env.conf << 'EOF'
+# Azure 인증 환경 변수 (env_auth 방식)
+# AZURE_TENANT_ID=
+# AZURE_CLIENT_ID=
+# AZURE_CLIENT_SECRET=
+# AZURE_STORAGE_ACCOUNT_NAME=
+EOF
+      echo "[rclone-airgap] /etc/rclone/azure-env.conf 생성"
+    fi
+
+    # ── rclone.conf 뼈대 (없을 때만) ─────────────────────────────────────
+    if [ ! -f /etc/rclone/rclone.conf ]; then
+      install -m 640 /dev/null /etc/rclone/rclone.conf
+      echo "[rclone-airgap] /etc/rclone/rclone.conf 생성"
+    fi
+
+    # ── Azure 템플릿 배치 ─────────────────────────────────────────────────
+    if [ ! -f /etc/rclone/rclone-azureblob.conf.template ]; then
+      install -m 640 \
+        "$SHARE_DIR/azure/rclone-azureblob.conf" \
+        /etc/rclone/rclone-azureblob.conf.template
+      echo "[rclone-airgap] Azure Blob 설정 템플릿 배치: /etc/rclone/rclone-azureblob.conf.template"
+    fi
+
+    # ── mount 예시 파일 배치 ──────────────────────────────────────────────
+    for f in "$SHARE_DIR/azure/conf-examples/"*.conf; do
+      [ -f "$f" ] || continue
+      dest="/etc/rclone/mounts/$(basename "$f").example"
+      if [ ! -f "$dest" ]; then
+        install -m 640 "$f" "$dest"
+      fi
+    done
+
+    # ── systemd reload ────────────────────────────────────────────────────
+    if command -v systemctl > /dev/null 2>&1 && systemctl is-system-running --quiet 2>/dev/null; then
+      systemctl daemon-reload || true
+      echo "[rclone-airgap] systemd daemon-reload 완료"
+    fi
+
+    # ── /usr/local/bin 심볼릭 링크 (PATH 가시성) ─────────────────────────
+    if [ ! -L /usr/bin/rclone ] && [ ! -f /usr/bin/rclone ]; then
+      ln -sf /usr/local/bin/rclone /usr/bin/rclone 2>/dev/null || true
+    fi
+
+    echo ""
+    echo "=============================================="
+    echo " rclone-azureblob-airgap 설치 완료"
+    echo "=============================================="
+    echo " 다음 단계:"
+    echo "  1. bash /usr/share/rclone-azureblob-airgap/scripts/configure-azureblob.sh"
+    echo "  2. bash /usr/share/rclone-azureblob-airgap/scripts/verify-azureblob.sh --remote <이름>"
+    echo "  3. systemctl start rclone-azureblob@<이름>.service"
+    echo "=============================================="
+    ;;
+
+  abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+  *)
+    echo "postinst: 알 수 없는 인수 $1" >&2
+    exit 1
+    ;;
+esac
+
+#DEBHELPER#
+exit 0

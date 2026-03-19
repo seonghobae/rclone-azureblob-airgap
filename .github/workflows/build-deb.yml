@@ -1,0 +1,194 @@
+name: Build deb package
+
+on:
+  push:
+    branches: [main]
+    tags:    ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  RCLONE_VERSION: "1.73.2"
+  PKG_NAME: "rclone-azureblob-airgap"
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 1. rclone 바이너리 다운로드 (아키텍처별 병렬)
+  # ─────────────────────────────────────────────────────────────────────────────
+  download-binaries:
+    name: Download rclone ${{ matrix.arch }}
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download rclone binary
+        run: |
+          BASE="https://downloads.rclone.org/v${RCLONE_VERSION}"
+          ZIP="rclone-v${RCLONE_VERSION}-linux-${{ matrix.arch }}.zip"
+          curl -fsSL -o "${ZIP}" "${BASE}/${ZIP}"
+
+          # 공식 체크섬 검증
+          EXPECTED=$(curl -fsSL "${BASE}/SHA256SUMS" | grep "${ZIP}" | awk '{print $1}')
+          ACTUAL=$(sha256sum "${ZIP}" | awk '{print $1}')
+          if [ "${EXPECTED}" != "${ACTUAL}" ]; then
+            echo "::error::체크섬 불일치! expected=${EXPECTED} actual=${ACTUAL}"
+            exit 1
+          fi
+          echo "체크섬 OK: ${ACTUAL}"
+
+          unzip -j "${ZIP}" "*/rclone" -d .
+          mv rclone rclone-linux-${{ matrix.arch }}
+          chmod 755 rclone-linux-${{ matrix.arch }}
+          ls -lh rclone-linux-${{ matrix.arch }}
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rclone-binary-${{ matrix.arch }}
+          path: rclone-linux-${{ matrix.arch }}
+          retention-days: 1
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 2. deb 빌드 (아키텍처별 병렬)
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-deb:
+    name: Build deb (${{ matrix.arch }})
+    runs-on: ubuntu-22.04
+    needs: download-binaries
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore rclone binary
+        uses: actions/download-artifact@v4
+        with:
+          name: rclone-binary-${{ matrix.arch }}
+          path: rclone-bins/
+
+      - name: Fix binary permissions
+        run: chmod 755 rclone-bins/rclone-linux-${{ matrix.arch }}
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            debhelper devscripts dpkg-dev fakeroot lintian
+
+      - name: Set package version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            TAG="${GITHUB_REF#refs/tags/v}"
+            echo "PKG_VERSION=${TAG}" >> "$GITHUB_OUTPUT"
+          else
+            SHORT_SHA="${GITHUB_SHA::8}"
+            echo "PKG_VERSION=${RCLONE_VERSION}-0git${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update debian/changelog version
+        run: |
+          VER="${{ steps.version.outputs.PKG_VERSION }}"
+          DATE=$(date -R)
+          # prepend 새 changelog 항목
+          {
+            echo "${PKG_NAME} (${VER}) unstable; urgency=medium"
+            echo ""
+            echo "  * Build from commit ${GITHUB_SHA::8}"
+            echo ""
+            echo " -- github-actions <actions@github.com>  ${DATE}"
+            echo ""
+            cat debian/changelog
+          } > debian/changelog.new
+          mv debian/changelog.new debian/changelog
+
+      - name: Build deb (fakeroot)
+        run: |
+          fakeroot dpkg-buildpackage \
+            -b \
+            -us -uc \
+            --host-arch=${{ matrix.arch }}
+
+      - name: Rename and inspect deb
+        id: deb
+        run: |
+          DEB=$(ls ../${PKG_NAME}_*.deb 2>/dev/null || ls ${PKG_NAME}_*.deb 2>/dev/null || find . -maxdepth 2 -name "${PKG_NAME}_*.deb" | head -1)
+          if [ -z "$DEB" ]; then
+            echo "::error::deb 파일을 찾을 수 없습니다"
+            find . -name "*.deb" || true
+            exit 1
+          fi
+          FINAL="${PKG_NAME}_${{ steps.version.outputs.PKG_VERSION }}_${{ matrix.arch }}.deb"
+          cp "$DEB" "$FINAL"
+          echo "DEB_PATH=${FINAL}" >> "$GITHUB_OUTPUT"
+          echo "--- dpkg-deb 정보 ---"
+          dpkg-deb --info "$FINAL"
+          echo "--- 파일 목록 ---"
+          dpkg-deb --contents "$FINAL"
+
+      - name: Run lintian (non-fatal)
+        run: lintian --no-tag-display-limit "${{ steps.deb.outputs.DEB_PATH }}" || true
+
+      - name: Upload deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-${{ matrix.arch }}
+          path: ${{ steps.deb.outputs.DEB_PATH }}
+          retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 3. deb 설치 smoke test (ubuntu-22.04 네이티브, amd64 only)
+  # ─────────────────────────────────────────────────────────────────────────────
+  smoke-test:
+    name: Smoke test (deb install)
+    runs-on: ubuntu-22.04
+    needs: build-deb
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download amd64 deb
+        uses: actions/download-artifact@v4
+        with:
+          name: deb-amd64
+          path: dist/
+
+      - name: Install deb (force-depends for offline FUSE debs)
+        run: |
+          sudo dpkg -i --force-depends dist/*.deb || true
+          sudo apt-get install -f -y 2>/dev/null || true
+
+      - name: Verify rclone binary
+        run: |
+          rclone version
+          rclone --help | head -5
+
+      - name: Verify share files
+        run: |
+          ls -la /usr/share/rclone-azureblob-airgap/scripts/
+          ls -la /usr/share/rclone-azureblob-airgap/azure/
+          ls -la /usr/share/rclone-azureblob-airgap/fuse-debs/
+
+      - name: Verify systemd units
+        run: |
+          ls -la /lib/systemd/system/rclone-azureblob@.service
+          systemd-analyze verify /lib/systemd/system/rclone-azureblob@.service 2>/dev/null || true
+
+      - name: Verify /etc/rclone layout
+        run: |
+          ls -la /etc/rclone/
+          ls -la /etc/rclone/mounts/ || true
+          test -f /etc/rclone/rclone.conf && echo "rclone.conf OK"
+          test -f /etc/rclone/azure-env.conf && echo "azure-env.conf OK"
+
+      - name: Run verify-mount.sh (no-fuse mode)
+        run: |
+          sudo bash /usr/share/rclone-azureblob-airgap/scripts/verify-mount.sh || true
+
+      - name: Run verify-azureblob.sh (no remote)
+        run: |
+          bash /usr/share/rclone-azureblob-airgap/scripts/verify-azureblob.sh || true

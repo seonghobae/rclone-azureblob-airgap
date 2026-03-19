@@ -1,0 +1,16 @@
+# rclone 바이너리 (CI에서 다운로드)
+rclone-bins/rclone-linux-amd64
+rclone-bins/rclone-linux-arm64
+rclone-bins/rclone-v1.73.2-linux-amd64.zip
+rclone-bins/rclone-v1.73.2-linux-arm64.zip
+
+# 빌드 산출물
+*.tar.gz
+*.tar.gz.sha256
+dist/
+build/
+*.deb
+
+# 임시 파일
+*.tmp
+.DS_Store

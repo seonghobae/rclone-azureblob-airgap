@@ -1,0 +1,83 @@
+#!/usr/bin/make -f
+# debian/rules — rclone-azureblob-airgap deb 빌드 규칙
+#
+# CI 환경에서 ARCH 환경변수를 통해 amd64/arm64를 선택합니다.
+# 로컬 빌드: dpkg-buildpackage -b -us -uc
+
+%:
+	dh $@
+
+# 실제 설치 레이아웃을 직접 구성
+override_dh_auto_install:
+	$(eval ARCH := $(shell dpkg --print-architecture))
+	$(eval PKG  := debian/rclone-azureblob-airgap)
+	$(eval VER  := 1.73.2)
+
+	# ── rclone 바이너리 ─────────────────────────────────────────────────
+	install -D -m 755 rclone-bins/rclone-linux-$(ARCH) \
+		$(PKG)/usr/local/bin/rclone
+
+	# ── scripts ──────────────────────────────────────────────────────────
+	install -D -m 755 scripts/install.sh \
+		$(PKG)/usr/share/rclone-azureblob-airgap/scripts/install.sh
+	install -D -m 755 scripts/configure-azureblob.sh \
+		$(PKG)/usr/share/rclone-azureblob-airgap/scripts/configure-azureblob.sh
+	install -D -m 755 scripts/verify-azureblob.sh \
+		$(PKG)/usr/share/rclone-azureblob-airgap/scripts/verify-azureblob.sh
+	install -D -m 755 scripts/verify-mount.sh \
+		$(PKG)/usr/share/rclone-azureblob-airgap/scripts/verify-mount.sh
+
+	# ── systemd 서비스 유닛 ───────────────────────────────────────────────
+	install -D -m 644 systemd/rclone-azureblob@.service \
+		$(PKG)/lib/systemd/system/rclone-azureblob@.service
+	install -D -m 644 systemd/rclone-mount@.service \
+		$(PKG)/lib/systemd/system/rclone-mount@.service
+
+	# ── Azure 설정 템플릿 ─────────────────────────────────────────────────
+	install -D -m 640 azure/rclone-azureblob.conf \
+		$(PKG)/usr/share/rclone-azureblob-airgap/azure/rclone-azureblob.conf
+	install -D -m 640 azure/conf-examples/azblob-key.conf \
+		$(PKG)/usr/share/rclone-azureblob-airgap/azure/conf-examples/azblob-key.conf
+	install -D -m 640 azure/conf-examples/azblob-sp.conf \
+		$(PKG)/usr/share/rclone-azureblob-airgap/azure/conf-examples/azblob-sp.conf
+	install -D -m 640 azure/conf-examples/azblob-msi.conf \
+		$(PKG)/usr/share/rclone-azureblob-airgap/azure/conf-examples/azblob-msi.conf
+
+	# ── FUSE3 오프라인 deb 캐시 (아키텍처별) ─────────────────────────────
+	# jammy
+	install -D -m 644 fuse-debs/jammy/libfuse3-3_3.10.5-1build1_$(ARCH).deb \
+		$(PKG)/usr/share/rclone-azureblob-airgap/fuse-debs/jammy/libfuse3-3_3.10.5-1build1_$(ARCH).deb
+	install -D -m 644 fuse-debs/jammy/fuse3_3.10.5-1build1_$(ARCH).deb \
+		$(PKG)/usr/share/rclone-azureblob-airgap/fuse-debs/jammy/fuse3_3.10.5-1build1_$(ARCH).deb
+	# noble
+	install -D -m 644 fuse-debs/noble/libfuse3-3_3.14.0-5build1_$(ARCH).deb \
+		$(PKG)/usr/share/rclone-azureblob-airgap/fuse-debs/noble/libfuse3-3_3.14.0-5build1_$(ARCH).deb
+	install -D -m 644 fuse-debs/noble/fuse3_3.14.0-5build1_$(ARCH).deb \
+		$(PKG)/usr/share/rclone-azureblob-airgap/fuse-debs/noble/fuse3_3.14.0-5build1_$(ARCH).deb
+
+	# ── 문서 ──────────────────────────────────────────────────────────────
+	install -D -m 644 README.md \
+		$(PKG)/usr/share/doc/rclone-azureblob-airgap/README.md
+	install -D -m 644 azure/README-azureblob.md \
+		$(PKG)/usr/share/doc/rclone-azureblob-airgap/README-azureblob.md
+
+	# ── /etc 초기 디렉토리 뼈대 ──────────────────────────────────────────
+	install -d -m 750 $(PKG)/etc/rclone
+	install -d -m 750 $(PKG)/etc/rclone/mounts
+	install -d -m 700 $(PKG)/etc/rclone/certs
+
+override_dh_fixperms:
+	dh_fixperms
+	# azure 설정 파일은 640 유지 (그룹 읽기 허용)
+	find debian/rclone-azureblob-airgap/usr/share/rclone-azureblob-airgap/azure \
+		-type f -exec chmod 640 {} \;
+	find debian/rclone-azureblob-airgap/etc/rclone \
+		-type d -exec chmod 750 {} \;
+
+override_dh_strip:
+	# rclone Go 바이너리는 strip 불필요
+	@true
+
+override_dh_shlibdeps:
+	# Go 정적 바이너리는 shlibdeps 불필요
+	@true
