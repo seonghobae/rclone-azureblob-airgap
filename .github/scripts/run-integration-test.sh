@@ -42,24 +42,27 @@ apt-get install -y --no-install-recommends \
 	python3 \
 	2>/dev/null
 
-# Node.js 20 LTS 설치 (jammy/noble 기본 nodejs는 너무 구버전)
+# Node.js 20 LTS + npm 설치
+# NodeSource nodejs 패키지(>=18)는 npm 포함
 if ! node --version 2>/dev/null | grep -qE "^v(18|20|22)\."; then
-	curl -fsSL https://deb.nodesource.com/setup_20.x | bash - 2>&1 | tail -5
-	apt-get install -y nodejs 2>/dev/null
+	curl -fsSL https://deb.nodesource.com/setup_20.x | bash - 2>&1 | tail -3
+	apt-get install -y nodejs 2>&1 | tail -3
 fi
-node --version
-npm --version 2>/dev/null || {
-	apt-get install -y npm 2>/dev/null
-	npm --version
-}
-green "기본 도구 설치 완료"
+NODE_VER=$(node --version 2>/dev/null || echo "none")
+NPM_VER=$(npm --version 2>/dev/null || echo "none")
+info "Node.js: $NODE_VER, npm: $NPM_VER"
+# npm이 여전히 없으면 corepack 으로 활성화
+if [[ "$NPM_VER" == "none" ]]; then
+	corepack enable 2>/dev/null || true
+	NPM_VER=$(npm --version 2>/dev/null || echo "still-none")
+	info "npm after corepack: $NPM_VER"
+fi
+green "기본 도구 설치 완료 (node=$NODE_VER npm=$NPM_VER)"
 
 # ── 2. Azurite 설치 및 시작 ───────────────────────────────────────────────────
 step "2. Azurite (Azure Storage Emulator) 설치 및 시작"
-npm install -g azurite && green "Azurite 설치 완료" || {
-	red "Azurite 설치 실패"
-	exit 1
-}
+npm install -g azurite 2>&1 | tail -10
+green "Azurite 설치 완료"
 mkdir -p /tmp/azurite-data
 
 # Azurite를 127.0.0.1 바인딩으로 시작 (Private Link 모의: 외부 접근 차단)
