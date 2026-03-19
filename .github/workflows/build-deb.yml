@@ -23,7 +23,7 @@ jobs:
       matrix:
         arch: [amd64, arm64]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Download rclone binary
         run: |
@@ -46,7 +46,7 @@ jobs:
           ls -lh rclone-linux-${{ matrix.arch }}
 
       - name: Upload binary artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: rclone-binary-${{ matrix.arch }}
           path: rclone-linux-${{ matrix.arch }}
@@ -63,10 +63,10 @@ jobs:
       matrix:
         arch: [amd64, arm64]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Restore rclone binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8.0.1
         with:
           name: rclone-binary-${{ matrix.arch }}
           path: rclone-bins/
@@ -142,7 +142,7 @@ jobs:
         run: lintian --no-tag-display-limit "${{ steps.deb.outputs.DEB_PATH }}" || true
 
       - name: Upload deb artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: deb-${{ matrix.arch }}
           path: ${{ steps.deb.outputs.DEB_PATH }}
@@ -168,10 +168,10 @@ jobs:
             artifact: deb-arm64
             codename: noble
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Download deb artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8.0.1
         with:
           name: ${{ matrix.artifact }}
           path: dist/

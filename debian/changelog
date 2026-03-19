@@ -1,3 +1,13 @@
+rclone-azureblob-airgap (1.73.2-7) unstable; urgency=medium
+
+  * GitHub Actions: upgrade to Node 24 compatible action versions
+    to remove Node 20 deprecation warnings on github.com.
+    - actions/checkout@v6.0.2
+    - actions/upload-artifact@v7.0.0
+    - actions/download-artifact@v8.0.1
+
+ -- seonghobae <seonghobae@users.noreply.github.com>  Thu, 19 Mar 2026 00:00:00 +0000
+
 rclone-azureblob-airgap (1.73.2-6) unstable; urgency=medium
 
   * build-deb.yml: add real arm64 smoke-test on ubuntu-24.04-arm runner.

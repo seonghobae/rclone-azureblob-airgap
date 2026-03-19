@@ -20,7 +20,7 @@ jobs:
       version: ${{ steps.version.outputs.PKG_VERSION }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Derive version from tag
         id: version
@@ -81,7 +81,7 @@ jobs:
           echo "DEB=${FINAL}" >> "$GITHUB_ENV"
 
       - name: Upload release artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: release-deb-${{ matrix.arch }}
           path: |
@@ -96,10 +96,10 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Download all deb artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8.0.1
         with:
           pattern: release-deb-*
           merge-multiple: true

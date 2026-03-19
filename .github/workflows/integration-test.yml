@@ -43,7 +43,7 @@ jobs:
             image: ubuntu:24.04
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       # ── rclone 바이너리 다운로드 ──────────────────────────────────────────
       - name: Download rclone binary (amd64)
@@ -83,7 +83,7 @@ jobs:
     name: Private Link DNS mock test
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Download rclone binary
         run: |
@@ -118,7 +118,7 @@ jobs:
     name: configure-azureblob.sh non-interactive test
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Download rclone binary
         run: |
