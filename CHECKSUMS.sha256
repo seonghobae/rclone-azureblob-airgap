@@ -9,7 +9,7 @@ abe19bd600bf58007d38e56aa1121f5f65bb1b2859d2b93ca9d389136bb85170  ./AGENTS.md
 02be0245f73232c86050fa50ecd623801954404ad1aa7a1eef0e92a1164b4c27  ./azure/conf-examples/azblob-msi.conf
 9f9a28661f9128341476db395066a6ef6c867ef918e2d531259a76316bfdfd20  ./azure/conf-examples/azblob-sp.conf
 2e228fffa22e220166e540b98a2b19fd4bfa15733b6c5fdeed4cb8c2f17db9bc  ./azure/rclone-azureblob.conf
-132421438f300e146ded24302566c09d65e87ebda4bee716b831c84676022174  ./azure/README-azureblob.md
+0fc714e48453678c713d14dd48d0d9b366ead3733e529f9bc99442381c2992e4  ./azure/README-azureblob.md
 b8830fefae33dd6d746fb8c924653d27aff5cee303f3edf15fc480ca2b363698  ./debian/changelog
 8eb55dde2d07a5a5faad2b9c5c914cbfcd402c3aa9b0158f4af119a03c9cce13  ./debian/control
 d89e5ac72426492907644b31a894558803f0592bd13cc6a3f892a683f4e7256b  ./debian/copyright

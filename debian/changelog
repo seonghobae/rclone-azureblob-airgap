@@ -1,3 +1,10 @@
+rclone-azureblob-airgap (1.73.2-9) unstable; urgency=medium
+
+  * docs: remove the last stale hardcoded package revision from
+    azure/README-azureblob.md and use {VER} placeholder consistently.
+
+ -- seonghobae <seonghobae@users.noreply.github.com>  Thu, 19 Mar 2026 00:00:00 +0000
+
 rclone-azureblob-airgap (1.73.2-8) unstable; urgency=medium
 
   * GitHub Actions: upgrade docker/setup-buildx-action to v4.0.0

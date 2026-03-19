@@ -44,7 +44,7 @@ azure/
 
 ```bash
 # deb 패키지 설치 (권장 — FUSE3 자동 포함)
-sudo dpkg -i rclone-azureblob-airgap_1.73.2-2_amd64.deb
+sudo dpkg -i rclone-azureblob-airgap_{VER}_amd64.deb
 
 # 설치 확인
 rclone version
