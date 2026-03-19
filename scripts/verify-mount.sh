@@ -36,7 +36,7 @@ if rclone_path=$(command -v rclone 2>/dev/null); then
 	ver=$(rclone version 2>/dev/null | head -1)
 	check_pass "버전: $ver"
 else
-	check_fail "rclone 이 PATH에 없음. install.sh 를 먼저 실행하세요."
+	check_fail "rclone 이 PATH에 없음. sudo dpkg -i rclone-azureblob-airgap_*.deb  (또는) sudo bash /usr/share/rclone-azureblob-airgap/scripts/install.sh 를 먼저 실행하세요."
 fi
 
 section "2. FUSE 커널 모듈"
@@ -60,7 +60,7 @@ if command -v dpkg &>/dev/null; then
 		ver=$(dpkg -l libfuse3-3 2>/dev/null | awk '/^ii/{print $3}')
 		check_pass "libfuse3-3 설치됨: $ver"
 	else
-		check_fail "libfuse3-3 미설치 → sudo bash scripts/install.sh 실행"
+		check_fail "libfuse3-3 미설치 → sudo dpkg -i rclone-azureblob-airgap_*.deb  (또는) sudo bash /usr/share/rclone-azureblob-airgap/scripts/install.sh 실행"
 	fi
 
 	if dpkg -l fuse3 2>/dev/null | grep -q "^ii"; then

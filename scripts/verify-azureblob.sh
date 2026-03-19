@@ -90,7 +90,7 @@ if rclone_path=$(command -v rclone 2>/dev/null); then
 	ver=$(rclone version 2>/dev/null | head -1)
 	check_pass "버전: $ver"
 else
-	check_fail "rclone 이 PATH에 없음. sudo bash scripts/install.sh 를 먼저 실행하세요."
+	check_fail "rclone 이 PATH에 없음. sudo dpkg -i rclone-azureblob-airgap_*.deb  (또는) sudo bash /usr/share/rclone-azureblob-airgap/scripts/install.sh 를 먼저 실행하세요."
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -156,7 +156,7 @@ if [[ -f "$RCLONE_CONF" ]]; then
 	fi
 else
 	check_warn "conf 파일 없음: $RCLONE_CONF"
-	echo "    → sudo bash scripts/install.sh 를 먼저 실행하거나"
+	echo "    → sudo dpkg -i rclone-azureblob-airgap_*.deb  (또는) sudo bash /usr/share/rclone-azureblob-airgap/scripts/install.sh 를 먼저 실행하거나"
 	echo "      mkdir -p /etc/rclone && cp azure/rclone-azureblob.conf /etc/rclone/rclone.conf"
 fi
 
@@ -174,7 +174,7 @@ if command -v fusermount3 &>/dev/null; then
 elif command -v fusermount &>/dev/null; then
 	check_warn "fusermount (v2) 만 발견. fuse3 패키지 설치 권장."
 else
-	check_fail "fusermount3 없음 → sudo bash scripts/install.sh"
+	check_fail "fusermount3 없음 → sudo dpkg -i rclone-azureblob-airgap_*.deb  (또는) sudo bash /usr/share/rclone-azureblob-airgap/scripts/install.sh"
 fi
 
 if [[ -f /etc/fuse.conf ]] && grep -q "^user_allow_other" /etc/fuse.conf; then
@@ -306,7 +306,7 @@ if command -v systemctl &>/dev/null; then
 		check_pass "rclone-azureblob@.service 템플릿 설치됨"
 	else
 		check_warn "rclone-azureblob@.service 미설치"
-		echo "    → sudo bash scripts/install.sh 로 설치하거나"
+		echo "    → sudo dpkg -i rclone-azureblob-airgap_*.deb  (또는) sudo bash /usr/share/rclone-azureblob-airgap/scripts/install.sh 로 설치하거나"
 		echo "      sudo cp systemd/rclone-azureblob@.service /etc/systemd/system/"
 	fi
 else

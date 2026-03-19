@@ -189,8 +189,28 @@ jobs:
         run: |
           ls -la /usr/share/rclone-azureblob-airgap/scripts/
           ls -la /usr/share/rclone-azureblob-airgap/azure/
-          echo "--- bundled fuse-debs cache ---"
+          echo "--- bundled fuse-debs cache (expect 8 files: jammy+noble x amd64+arm64 x libfuse3-3+fuse3) ---"
           find /usr/share/rclone-azureblob-airgap/fuse-debs/ -name "*.deb" | sort
+          # Assert exactly 8 deb files are bundled
+          COUNT=$(find /usr/share/rclone-azureblob-airgap/fuse-debs/ -name "*.deb" | wc -l)
+          echo "fuse-debs count: $COUNT"
+          [ "$COUNT" -eq 8 ] && echo "PASS: all 8 fuse-debs present (jammy+noble x amd64+arm64 x libfuse3-3+fuse3)" || \
+            { echo "FAIL: expected 8 fuse-debs, got $COUNT"; exit 1; }
+          # Assert each specific file exists
+          for codename in jammy noble; do
+            for arch in amd64 arm64; do
+              for pkg in libfuse3-3 fuse3; do
+                f=$(find /usr/share/rclone-azureblob-airgap/fuse-debs/${codename}/ -name "${pkg}_*_${arch}.deb" 2>/dev/null | head -1)
+                [ -n "$f" ] && echo "  OK: $f" || { echo "FAIL: missing ${codename}/${pkg}_*_${arch}.deb"; exit 1; }
+              done
+            done
+          done
+
+      - name: Verify mount example conf bundled
+        run: |
+          ls -la /usr/share/rclone-azureblob-airgap/ || true
+          # rclone-mount-example.conf 은 /etc/rclone/mounts/ 안에 example 파일로 배치됨
+          sudo ls -la /etc/rclone/mounts/ || true
 
       - name: Verify systemd units
         run: |

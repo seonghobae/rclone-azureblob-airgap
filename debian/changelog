@@ -1,3 +1,17 @@
+rclone-azureblob-airgap (1.73.2-4) unstable; urgency=medium
+
+  * debian/rules: bundle rclone-mount-example.conf in deb
+    (usr/share/rclone-azureblob-airgap/examples/rclone-mount-example.conf).
+  * build-deb.yml smoke-test: add assertion that all 8 fuse-debs are bundled
+    (jammy+noble x amd64+arm64 x libfuse3-3+fuse3); fail if count != 8.
+  * integration-test.yml: add non-interactive tests for all 7 auth methods:
+    SAS URL (2), SP Secret (4), SP Certificate (5),
+    MSI System-assigned (6a), MSI User-assigned (6b), env_auth (7).
+  * verify-azureblob.sh, verify-mount.sh: fix install hint to show
+    'sudo dpkg -i *.deb' as primary install method after deb era.
+
+ -- seonghobae <seonghobae@users.noreply.github.com>  Thu, 19 Mar 2026 00:00:00 +0000
+
 rclone-azureblob-airgap (1.73.2-3) unstable; urgency=high
 
   * systemd: remove ConditionPathIsDirectory=/run/rclone-azureblob/%i

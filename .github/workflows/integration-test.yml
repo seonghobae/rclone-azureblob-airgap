@@ -177,7 +177,6 @@ jobs:
 
       - name: Test Private Endpoint config generation (non-interactive)
         run: |
-          # Private Endpoint URL 포함 설정 테스트
           CONF=$(mktemp /tmp/rclone-test-XXXXXX.conf)
           printf 'petest\nmystorageaccount\ny\nhttps://mystorageaccount.blob.core.windows.net\n1\nfakeKey==\n16\n4M\n\n' \
             | bash scripts/configure-azureblob.sh --conf "$CONF" 2>&1 || true
@@ -185,5 +184,93 @@ jobs:
             echo "PASS: Private Endpoint 설정 포함"
           else
             echo "INFO: endpoint 줄 없음 (비필수, 건너뜀)"
+          fi
+          rm -f "$CONF"
+
+      - name: Test SAS URL config generation (method 2)
+        run: |
+          CONF=$(mktemp /tmp/rclone-test-XXXXXX.conf)
+          SAS="https://myaccount.blob.core.windows.net/?sv=2022-11-02&ss=b&sig=fakeSignature"
+          # SAS: remote이름 / account이름 / PrivateEndpoint?(n) / 인증방식(2) / SAS URL / 병렬도 / 청크 / 티어
+          printf 'sastest\nmyaccount\nn\n2\n%s\n16\n4M\n\n' "$SAS" \
+            | bash scripts/configure-azureblob.sh --conf "$CONF" 2>&1 || true
+          if grep -q "sas_url" "$CONF"; then
+            echo "PASS: SAS URL 설정 성공"
+            grep -v "sig=" "$CONF"  # signature 제외 출력
+          else
+            echo "FAIL: sas_url 없음"; cat "$CONF"; exit 1
+          fi
+          grep -q "disable_instance_discovery.*=.*true" "$CONF" && \
+            echo "PASS: disable_instance_discovery=true (SAS도 포함)" || \
+            { echo "FAIL: disable_instance_discovery 없음"; exit 1; }
+          rm -f "$CONF"
+
+      - name: Test Service Principal (Secret) config generation (method 4)
+        run: |
+          CONF=$(mktemp /tmp/rclone-test-XXXXXX.conf)
+          # SP Secret: remote / account / PE?(n) / 인증(4) / TenantID / ClientID / ClientSecret / 병렬도 / 청크 / 티어
+          printf 'sptest\nmyaccount\nn\n4\nabc-tenant-id\nabc-client-id\nfakeClientSecret\n16\n4M\n\n' \
+            | bash scripts/configure-azureblob.sh --conf "$CONF" 2>&1 || true
+          if grep -q "client_secret" "$CONF" && grep -q "tenant" "$CONF"; then
+            echo "PASS: Service Principal (Secret) 설정 성공"
+            grep -v "client_secret\s*=" "$CONF"
+          else
+            echo "FAIL: SP 설정 없음"; cat "$CONF"; exit 1
+          fi
+          rm -f "$CONF"
+
+      - name: Test Service Principal (Certificate) config generation (method 5)
+        run: |
+          CONF=$(mktemp /tmp/rclone-test-XXXXXX.conf)
+          # SP Cert: remote / account / PE?(n) / 인증(5) / TenantID / ClientID / 인증서경로 / 암호(없음=Enter) / 병렬도 / 청크 / 티어
+          printf 'spcerttest\nmyaccount\nn\n5\nabc-tenant-id\nabc-client-id\n/etc/rclone/certs/sp.pem\n\n16\n4M\n\n' \
+            | bash scripts/configure-azureblob.sh --conf "$CONF" 2>&1 || true
+          if grep -q "client_certificate_path" "$CONF"; then
+            echo "PASS: Service Principal (Certificate) 설정 성공"
+            cat "$CONF"
+          else
+            echo "FAIL: client_certificate_path 없음"; cat "$CONF"; exit 1
+          fi
+          rm -f "$CONF"
+
+      - name: Test Managed Identity (System) config generation (method 6a)
+        run: |
+          CONF=$(mktemp /tmp/rclone-test-XXXXXX.conf)
+          # MSI System: remote / account / PE?(n) / 인증(6) / MSI타입(a=system) / 병렬도 / 청크 / 티어
+          printf 'msitest\nmyaccount\nn\n6\na\n16\n4M\n\n' \
+            | bash scripts/configure-azureblob.sh --conf "$CONF" 2>&1 || true
+          if grep -q "use_msi.*=.*true" "$CONF"; then
+            echo "PASS: MSI (System-assigned) 설정 성공"
+            cat "$CONF"
+          else
+            echo "FAIL: use_msi 없음"; cat "$CONF"; exit 1
+          fi
+          rm -f "$CONF"
+
+      - name: Test Managed Identity (User-assigned) config generation (method 6b)
+        run: |
+          CONF=$(mktemp /tmp/rclone-test-XXXXXX.conf)
+          # MSI User: remote / account / PE?(n) / 인증(6) / MSI타입(b) / MSI Client ID / 병렬도 / 청크 / 티어
+          printf 'msiusertest\nmyaccount\nn\n6\nb\nabc-msi-client-id\n16\n4M\n\n' \
+            | bash scripts/configure-azureblob.sh --conf "$CONF" 2>&1 || true
+          if grep -q "use_msi.*=.*true" "$CONF" && grep -q "msi_client_id" "$CONF"; then
+            echo "PASS: MSI (User-assigned) 설정 성공"
+            cat "$CONF"
+          else
+            echo "FAIL: msi_client_id 없음"; cat "$CONF"; exit 1
+          fi
+          rm -f "$CONF"
+
+      - name: Test env_auth config generation (method 7)
+        run: |
+          CONF=$(mktemp /tmp/rclone-test-XXXXXX.conf)
+          # env_auth: remote / account / PE?(n) / 인증(7) / 병렬도 / 청크 / 티어
+          printf 'envtest\nmyaccount\nn\n7\n16\n4M\n\n' \
+            | bash scripts/configure-azureblob.sh --conf "$CONF" 2>&1 || true
+          if grep -q "env_auth.*=.*true" "$CONF"; then
+            echo "PASS: env_auth 설정 성공"
+            cat "$CONF"
+          else
+            echo "FAIL: env_auth 없음"; cat "$CONF"; exit 1
           fi
           rm -f "$CONF"

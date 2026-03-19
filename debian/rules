@@ -34,6 +34,9 @@ override_dh_auto_install:
 		$(PKG)/lib/systemd/system/rclone-azureblob@.service
 	install -D -m 644 systemd/rclone-mount@.service \
 		$(PKG)/lib/systemd/system/rclone-mount@.service
+	# mount 설정 예시 (사용자가 이걸 복사해서 REMOTE/MOUNTPOINT 수정)
+	install -D -m 644 systemd/rclone-mount-example.conf \
+		$(PKG)/usr/share/rclone-azureblob-airgap/examples/rclone-mount-example.conf
 
 	# ── Azure 설정 템플릿 ─────────────────────────────────────────────────
 	install -D -m 640 azure/rclone-azureblob.conf \
