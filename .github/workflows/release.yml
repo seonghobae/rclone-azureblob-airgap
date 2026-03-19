@@ -73,8 +73,8 @@ jobs:
       - name: Collect deb
         run: |
           VER="${{ steps.version.outputs.PKG_VERSION }}"
-          DEB=$(find .. -maxdepth 1 -name "${PKG_NAME}_*.deb" | head -1 || \
-                find . -maxdepth 2 -name "${PKG_NAME}_*.deb" | head -1)
+          DEB=$(find "$GITHUB_WORKSPACE/.." -maxdepth 1 -name "${PKG_NAME}_*.deb" 2>/dev/null | head -1)
+          [ -z "$DEB" ] && DEB=$(find "$GITHUB_WORKSPACE" -maxdepth 2 -name "${PKG_NAME}_*.deb" 2>/dev/null | head -1)
           FINAL="${PKG_NAME}_${VER}_${{ matrix.arch }}.deb"
           cp "$DEB" "$FINAL"
           sha256sum "$FINAL" > "${FINAL}.sha256"

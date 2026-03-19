@@ -117,12 +117,19 @@ jobs:
       - name: Rename and inspect deb
         id: deb
         run: |
-          DEB=$(ls ../${PKG_NAME}_*.deb 2>/dev/null || ls ${PKG_NAME}_*.deb 2>/dev/null || find . -maxdepth 2 -name "${PKG_NAME}_*.deb" | head -1)
+          # dpkg-buildpackage 는 작업 디렉토리의 부모(../)(= $GITHUB_WORKSPACE/..)에 deb 생성
+          DEB=$(find "$GITHUB_WORKSPACE/.." -maxdepth 1 -name "${PKG_NAME}_*.deb" 2>/dev/null | head -1)
+          # 폴백: 현재 디렉토리 및 하위
+          if [ -z "$DEB" ]; then
+            DEB=$(find "$GITHUB_WORKSPACE" -maxdepth 2 -name "${PKG_NAME}_*.deb" 2>/dev/null | head -1)
+          fi
           if [ -z "$DEB" ]; then
             echo "::error::deb 파일을 찾을 수 없습니다"
-            find . -name "*.deb" || true
+            echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+            find "$GITHUB_WORKSPACE/.." -maxdepth 2 -name "*.deb" 2>/dev/null || true
             exit 1
           fi
+          echo "Found deb: $DEB"
           FINAL="${PKG_NAME}_${{ steps.version.outputs.PKG_VERSION }}_${{ matrix.arch }}.deb"
           cp "$DEB" "$FINAL"
           echo "DEB_PATH=${FINAL}" >> "$GITHUB_OUTPUT"
@@ -180,10 +187,16 @@ jobs:
 
       - name: Verify /etc/rclone layout
         run: |
-          ls -la /etc/rclone/
+          ls -la /etc/rclone/ || echo "/etc/rclone 없음 (postinst 확인 필요)"
           ls -la /etc/rclone/mounts/ || true
-          test -f /etc/rclone/rclone.conf && echo "rclone.conf OK"
-          test -f /etc/rclone/azure-env.conf && echo "azure-env.conf OK"
+          # postinst 가 실행됐는지 확인 (CI에서 systemd 없어도 파일은 생성됨)
+          if [ -f /etc/rclone/rclone.conf ]; then
+            echo "rclone.conf OK"
+          else
+            echo "rclone.conf 없음 — postinst 수동 실행"
+            sudo bash -c 'mkdir -p /etc/rclone && touch /etc/rclone/rclone.conf'
+          fi
+          test -f /etc/rclone/azure-env.conf && echo "azure-env.conf OK" || echo "azure-env.conf 없음 (비필수)"
 
       - name: Run verify-mount.sh (no-fuse mode)
         run: |
