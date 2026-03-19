@@ -1,7 +1,6 @@
 import pathlib
 import unittest
 
-
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
@@ -56,6 +55,24 @@ class ReleaseHardeningTests(unittest.TestCase):
         self.assertNotIn(
             'mountpoint -q "$TMPDIR_MNT" 2>/dev/null || ls "$TMPDIR_MNT" &>/dev/null',
             verify_azure,
+        )
+
+    def test_private_link_mount_success_requires_mountpoint(self) -> None:
+        private_link_script = read_text(".github/scripts/docker-private-link-test.sh")
+        self.assertIn('mountpoint -q "$MOUNT_PT" 2>/dev/null', private_link_script)
+        self.assertNotIn('if ls "$MOUNT_PT" &>/dev/null; then', private_link_script)
+        self.assertNotIn('|| ls "$MOUNT_PT"', private_link_script)
+        self.assertIn(
+            "--vfs-write-back 0s",
+            private_link_script,
+        )
+        self.assertIn(
+            'rclone cat "azblob-private:private-test/$WRITE_BASENAME"',
+            private_link_script,
+        )
+        self.assertIn(
+            'if echo "$WRITE_CONTENT" >"$MOUNT_PT/$WRITE_BASENAME"; then',
+            private_link_script,
         )
 
     def test_integration_script_does_not_mask_release_critical_failures(self) -> None:

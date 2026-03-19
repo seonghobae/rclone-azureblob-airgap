@@ -39,7 +39,7 @@
 |---------|---------|
 | Build deb package | amd64 + arm64 빌드 성공, amd64 + arm64 smoke-test PASS |
 | Integration test | jammy + noble Docker 테스트 PASS=20 FAIL=0 |
-| Private Link mock | DNS mock + Azurite endpoint + FUSE PASS |
+| Private Link mock | DNS mock + Azurite endpoint + `mountpoint` 확인 + mounted read/write PASS |
 | Release | tag 빌드한 deb를 amd64 + arm64 smoke-test + reusable integration workflow 통과 후 GitHub Release 에 deb + sha256 4파일 업로드 |
 
 ## 배포 완료 기준
