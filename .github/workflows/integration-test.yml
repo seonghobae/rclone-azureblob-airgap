@@ -62,16 +62,18 @@ jobs:
       # ── 통합 테스트 실행 ──────────────────────────────────────────────────
       - name: Run integration test in Docker
         run: |
+          # bash -c "$(cat script)" 방식은 특수문자 확장 문제 발생
+          # 스크립트 파일을 직접 마운트해서 실행
           docker run \
             --rm \
             --privileged \
             --device /dev/fuse \
             --cap-add SYS_ADMIN \
             --security-opt apparmor:unconfined \
-            -v "$(pwd):/workspace:ro" \
+            -v "$(pwd):/workspace" \
             -e UBUNTU_CODENAME="${{ matrix.ubuntu }}" \
             ${{ matrix.image }} \
-            bash -c "$(cat .github/scripts/run-integration-test.sh)"
+            bash /workspace/.github/scripts/run-integration-test.sh
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Azure Private Link 환경 모의 — 네트워크 격리 테스트
