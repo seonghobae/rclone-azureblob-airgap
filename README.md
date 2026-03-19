@@ -1,6 +1,6 @@
-# rclone Airgap Bootstrap 패키지
+# rclone-azureblob-airgap
 
-인터넷이 없는 폐쇄망(Air-gapped) Ubuntu VM에서 **rclone** 설치 및 **FUSE mount** 환경을 완전히 구성합니다.
+인터넷이 없는 폐쇄망(Air-gapped) Ubuntu VM에서 **rclone** 설치 및 **Azure Blob Storage FUSE mount** 환경을 완전히 구성합니다.
 
 ---
 
@@ -8,151 +8,176 @@
 
 | OS | 아키텍처 | 상태 |
 |----|----------|------|
-| Ubuntu 22.04 LTS (Jammy) | amd64 | ✅ 포함 |
-| Ubuntu 22.04 LTS (Jammy) | arm64 | ✅ 포함 |
-| Ubuntu 24.04 LTS (Noble) | amd64 | ✅ 포함 |
-| Ubuntu 24.04 LTS (Noble) | arm64 | ✅ 포함 |
+| Ubuntu 22.04 LTS (Jammy) | amd64 | ✅ |
+| Ubuntu 22.04 LTS (Jammy) | arm64 | ✅ |
+| Ubuntu 24.04 LTS (Noble) | amd64 | ✅ |
+| Ubuntu 24.04 LTS (Noble) | arm64 | ✅ |
 
-rclone 버전: **v1.73.2** (2025년 3월 기준 최신 stable)
-
----
-
-## 패키지 구조
-
-```
-rclone-airgap/
-├── README.md                    ← 이 파일
-├── CHECKSUMS.sha256             ← 전체 파일 체크섬
-│
-├── rclone-bins/
-│   ├── rclone-linux-amd64      ← rclone 바이너리 (x86_64)
-│   ├── rclone-linux-arm64      ← rclone 바이너리 (aarch64)
-│   ├── rclone-v1.73.2-linux-amd64.zip   ← 원본 zip (검증용)
-│   ├── rclone-v1.73.2-linux-arm64.zip   ← 원본 zip (검증용)
-│   └── SHA256SUMS              ← rclone 공식 체크섬
-│
-├── fuse-debs/
-│   ├── jammy/                  ← Ubuntu 22.04용 deb
-│   │   ├── libfuse3-3_3.10.5-1build1_amd64.deb
-│   │   ├── fuse3_3.10.5-1build1_amd64.deb
-│   │   ├── libfuse3-3_3.10.5-1build1_arm64.deb
-│   │   └── fuse3_3.10.5-1build1_arm64.deb
-│   └── noble/                  ← Ubuntu 24.04용 deb
-│       ├── libfuse3-3_3.14.0-5build1_amd64.deb
-│       ├── fuse3_3.14.0-5build1_amd64.deb
-│       ├── libfuse3-3_3.14.0-5build1_arm64.deb
-│       └── fuse3_3.14.0-5build1_arm64.deb
-│
-├── scripts/
-│   ├── install.sh              ← 메인 설치 스크립트
-│   └── verify-mount.sh         ← 설치 후 검증 스크립트
-│
-└── systemd/
-    ├── rclone-mount@.service   ← systemd 인스턴스 템플릿
-    └── rclone-mount-example.conf  ← 마운트 설정 예시
-```
+- **rclone**: v1.73.2
+- **FUSE3**: Ubuntu 22.04 3.10.5 / Ubuntu 24.04 3.14.0
 
 ---
 
-## 빠른 시작
+## 설치 방법 (권장: deb 패키지)
 
-### 1단계: 패키지 전송
-
-인터넷이 되는 머신에서 tarball을 생성한 뒤 USB, scp, rsync 등으로 VM에 복사합니다.
+### 1단계: 인터넷 되는 머신에서 deb 다운로드
 
 ```bash
-# 패키지 생성 (인터넷 있는 머신)
-tar -czf rclone-airgap.tar.gz rclone-airgap/
+# amd64 (x86_64)
+curl -LO https://github.com/seonghobae/rclone-azureblob-airgap/releases/latest/download/rclone-azureblob-airgap_1.73.2-2_amd64.deb
+curl -LO https://github.com/seonghobae/rclone-azureblob-airgap/releases/latest/download/rclone-azureblob-airgap_1.73.2-2_amd64.deb.sha256
 
-# VM으로 전송 (예시: scp)
-scp rclone-airgap.tar.gz user@airgap-vm:/tmp/
+# arm64 (aarch64)
+curl -LO https://github.com/seonghobae/rclone-azureblob-airgap/releases/latest/download/rclone-azureblob-airgap_1.73.2-2_arm64.deb
+curl -LO https://github.com/seonghobae/rclone-azureblob-airgap/releases/latest/download/rclone-azureblob-airgap_1.73.2-2_arm64.deb.sha256
+
+# 무결성 검증
+sha256sum -c rclone-azureblob-airgap_1.73.2-2_amd64.deb.sha256
 ```
 
-### 2단계: VM에서 설치
+### 2단계: VM으로 전송
 
 ```bash
-# VM에서 실행
-cd /tmp
-tar -xzf rclone-airgap.tar.gz
-cd rclone-airgap
+# scp 예시
+scp rclone-azureblob-airgap_1.73.2-2_amd64.deb user@airgap-vm:/tmp/
 
-# 설치 (root 필요)
-sudo bash scripts/install.sh
+# USB, rsync, 내부 파일 서버 등 어떤 방법도 가능
 ```
 
-### 3단계: 검증
+### 3단계: VM에서 설치 (한 명령으로 완료)
 
 ```bash
-sudo bash scripts/verify-mount.sh
+sudo dpkg -i rclone-azureblob-airgap_1.73.2-2_amd64.deb
 ```
 
-### 4단계: rclone 설정
+`dpkg -i` 한 번으로 다음이 모두 자동 처리됩니다:
+- ✅ `rclone` 바이너리 → `/usr/bin/rclone`
+- ✅ `libfuse3-3` + `fuse3` → 번들 deb 에서 오프라인 자동 설치
+- ✅ `/etc/fuse.conf` → `user_allow_other` 자동 추가
+- ✅ `/etc/rclone/` 디렉토리 구조 생성
+- ✅ `/etc/rclone/rclone-azureblob.conf.template` Azure 설정 템플릿 배치
+- ✅ `rclone-azureblob@.service` systemd 유닛 등록
+
+### 4단계: Azure Blob 설정
 
 ```bash
-# 설정 편집
+# 인터랙티브 설정 도우미 (인증 방식 선택 → conf 자동 생성)
+bash /usr/share/rclone-azureblob-airgap/scripts/configure-azureblob.sh
+
+# 또는 직접 편집
 sudo vi /etc/rclone/rclone.conf
+# 참고: sudo cat /etc/rclone/rclone-azureblob.conf.template
+```
 
-# 또는 인터렉티브 설정 (폐쇄망이므로 OAuth 등 불가능할 수 있음)
-rclone config
+### 5단계: 검증
+
+```bash
+# FUSE 환경 + rclone 설치 검증
+bash /usr/share/rclone-azureblob-airgap/scripts/verify-mount.sh
+
+# Azure Blob 연결 검증 (remote 이름은 4단계에서 설정한 값)
+bash /usr/share/rclone-azureblob-airgap/scripts/verify-azureblob.sh --remote <remote이름>
 ```
 
 ---
 
-## FUSE mount 사용법
+## deb 패키지 내용
 
-### 포어그라운드 마운트 (테스트용)
+```
+/usr/bin/rclone                                             ← rclone v1.73.2 바이너리
+/usr/share/rclone-azureblob-airgap/
+  scripts/
+    configure-azureblob.sh                                  ← Azure Blob 설정 도우미
+    install.sh                                              ← 레거시 tarball 설치 도우미
+    verify-azureblob.sh                                     ← Azure 연결 검증
+    verify-mount.sh                                         ← FUSE mount 검증
+  azure/
+    rclone-azureblob.conf                                   ← 전체 인증 방식 템플릿
+    conf-examples/{azblob-key,azblob-sp,azblob-msi}.conf   ← mount 설정 예시
+  fuse-debs/
+    jammy/{libfuse3-3,fuse3}_3.10.5-1build1_{amd64,arm64}.deb   ← 번들 오프라인 캐시
+    noble/{libfuse3-3,fuse3}_3.14.0-5build1_{amd64,arm64}.deb
+/lib/systemd/system/rclone-azureblob@.service              ← mount 인스턴스 유닛
+/lib/systemd/system/rclone-mount@.service                  ← 범용 mount 유닛
+/etc/rclone/                                                ← 설정 디렉토리 (postinst 생성)
+```
+
+---
+
+## Azure Blob Storage mount
+
+### 포어그라운드 테스트
 
 ```bash
-mkdir -p /mnt/mydata
+mkdir -p /mnt/azureblob
 
-# S3 호환 스토리지 마운트
-rclone mount myremote:mybucket /mnt/mydata \
+rclone mount myremote:mycontainer /mnt/azureblob \
     --vfs-cache-mode writes \
     --allow-other \
     &
 
-# 확인
-ls /mnt/mydata
-
-# 언마운트
-fusermount3 -u /mnt/mydata
+ls /mnt/azureblob
+fusermount3 -u /mnt/azureblob
 ```
 
-### systemd 서비스로 영구 마운트
+### systemd 영구 마운트
 
 ```bash
 # 1. 마운트 설정 파일 생성
 sudo mkdir -p /etc/rclone/mounts
-sudo cp systemd/rclone-mount-example.conf /etc/rclone/mounts/s3data.conf
-sudo vi /etc/rclone/mounts/s3data.conf
-# → REMOTE, MOUNTPOINT 수정
+sudo tee /etc/rclone/mounts/myblob.conf << 'EOF'
+REMOTE=myremote:mycontainer
+MOUNTPOINT=/mnt/azureblob
+EXTRA_ARGS=--allow-other --vfs-cache-mode writes --vfs-cache-max-size 2G
+EOF
 
-# 2. systemd 서비스 파일 설치 (install.sh 가 이미 수행)
-# /etc/systemd/system/rclone-mount@.service
+# 2. 마운트 포인트 생성
+sudo mkdir -p /mnt/azureblob
 
 # 3. 서비스 시작
-sudo mkdir -p /mnt/s3data
-sudo systemctl start rclone-mount@s3data.service
-sudo systemctl enable rclone-mount@s3data.service
+sudo systemctl daemon-reload
+sudo systemctl start  rclone-azureblob@myblob.service
+sudo systemctl enable rclone-azureblob@myblob.service
 
-# 4. 상태 확인
-sudo systemctl status rclone-mount@s3data.service
-sudo journalctl -u rclone-mount@s3data.service -f
+# 4. 로그 확인
+sudo journalctl -u rclone-azureblob@myblob.service -f
 ```
 
 ---
 
-## 옵션별 설치
+## Azure Private Link 환경
+
+폐쇄망에서 Azure Storage Private Endpoint 사용 시 모든 인증 설정에 아래를 추가합니다:
+
+```ini
+disable_instance_discovery = true
+```
+
+이 설정으로 rclone이 `login.microsoft.com` 메타데이터를 조회하지 않습니다.
+
+Private Endpoint DNS 오버라이드 (내부 DNS 또는 `/etc/hosts`):
+```
+10.0.1.5   mystorageaccount.blob.core.windows.net
+```
+
+자세한 인증 방식별 설정은 [azure/README-azureblob.md](azure/README-azureblob.md)를 참고하세요.
+
+---
+
+## 대안: tarball 방식 (레거시)
+
+deb 패키지를 사용할 수 없는 환경을 위한 대안입니다.
 
 ```bash
-# rclone 바이너리만 설치 (FUSE 제외)
-sudo bash scripts/install.sh --no-fuse
+# 인터넷 되는 머신에서 repo clone 후 tarball 생성
+git clone https://github.com/seonghobae/rclone-azureblob-airgap.git
+cd rclone-azureblob-airgap
+# rclone 바이너리는 .gitignore 제외 — CI 다운로드 또는 직접 추가 필요
+# https://downloads.rclone.org/v1.73.2/rclone-v1.73.2-linux-amd64.zip
 
-# 설치 경로 변경
-sudo bash scripts/install.sh --prefix /usr/bin
-
-# 설치 결과 검증만
-sudo bash scripts/verify-mount.sh
+# VM으로 전송 후
+tar -xzf rclone-airgap.tar.gz && cd rclone-airgap
+sudo bash scripts/install.sh
 ```
 
 ---
@@ -162,55 +187,33 @@ sudo bash scripts/verify-mount.sh
 ### `/dev/fuse: No such file or directory`
 
 ```bash
-# FUSE 커널 모듈 로드
 sudo modprobe fuse
-
-# 영구 적용 (재부팅 후에도)
+# 영구 적용
 echo "fuse" | sudo tee /etc/modules-load.d/fuse.conf
-
-# VM인 경우: VM 설정에서 /dev/fuse passthrough 확인 필요
 ```
 
-### `fusermount: option allow_other only allowed if 'user_allow_other' is set in /etc/fuse.conf`
+### `user_allow_other` 오류
 
 ```bash
-echo "user_allow_other" | sudo tee -a /etc/fuse.conf
+grep "user_allow_other" /etc/fuse.conf || echo "user_allow_other" | sudo tee -a /etc/fuse.conf
 ```
 
-### `fuse: device not found, try 'modprobe fuse' first`
+### 마운트 후 파일 미노출
 
 ```bash
-sudo modprobe fuse
-# 커널에 FUSE 모듈이 없는 경우: VM 이미지에 fuse 커널 모듈이 포함됐는지 확인
-lsmod | grep fuse
+rclone ls myremote:mycontainer    # 직접 조회 확인
+# 성공 시: --dir-cache-time 5s 옵션으로 캐시 줄이기
 ```
 
-### 일반 사용자로 mount
+### FUSE가 설치 안 됐을 때
 
 ```bash
-# fuse 그룹에 사용자 추가
-sudo usermod -aG fuse $USER
-# 재로그인 필요
-newgrp fuse
-
-# 또는 setuid 비트 (주의: 보안 위험)
-# sudo chmod u+s $(which fusermount3)
-```
-
-### VFS 캐시 관련 성능 튜닝
-
-```bash
-# 읽기 위주: minimal 캐시
-rclone mount remote:/ /mnt --vfs-cache-mode minimal
-
-# 쓰기도 함: writes 캐시 (권장)
-rclone mount remote:/ /mnt --vfs-cache-mode writes
-
-# 완전 로컬 캐시 (가장 빠르지만 디스크 소모)
-rclone mount remote:/ /mnt \
-    --vfs-cache-mode full \
-    --vfs-cache-max-size 20G \
-    --vfs-read-ahead 128M
+# 번들 캐시에서 수동 설치
+CODENAME=$(. /etc/os-release && echo $VERSION_CODENAME)
+ARCH=$(dpkg --print-architecture)
+sudo dpkg -i --force-depends \
+  /usr/share/rclone-azureblob-airgap/fuse-debs/${CODENAME}/libfuse3-3_*_${ARCH}.deb \
+  /usr/share/rclone-azureblob-airgap/fuse-debs/${CODENAME}/fuse3_*_${ARCH}.deb
 ```
 
 ---
@@ -218,12 +221,7 @@ rclone mount remote:/ /mnt \
 ## 무결성 검증
 
 ```bash
-# 설치 전 체크섬 검증
-sha256sum -c CHECKSUMS.sha256
-
-# rclone 공식 체크섬 확인
-grep "linux-amd64.zip" rclone-bins/SHA256SUMS
-sha256sum rclone-bins/rclone-v1.73.2-linux-amd64.zip
+sha256sum -c rclone-azureblob-airgap_1.73.2-2_amd64.deb.sha256
 ```
 
 ---
@@ -232,4 +230,4 @@ sha256sum rclone-bins/rclone-v1.73.2-linux-amd64.zip
 
 - rclone: MIT License (https://github.com/rclone/rclone/blob/master/COPYING)
 - FUSE3: LGPL-2.1 (https://github.com/libfuse/libfuse)
-- 이 패키지 스크립트: MIT License
+- 패키지 스크립트: MIT License

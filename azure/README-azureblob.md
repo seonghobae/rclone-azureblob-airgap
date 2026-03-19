@@ -38,20 +38,46 @@ azure/
 
 ---
 
+## 설치 전제 조건
+
+패키지가 설치되어 있어야 합니다:
+
+```bash
+# deb 패키지 설치 (권장 — FUSE3 자동 포함)
+sudo dpkg -i rclone-azureblob-airgap_1.73.2-2_amd64.deb
+
+# 설치 확인
+rclone version
+dpkg -l libfuse3-3 fuse3 | grep '^ii'
+```
+
+---
+
 ## 빠른 설정
 
 ### 옵션 A: 도우미 스크립트 (권장)
 
 ```bash
+# deb 설치 후 경로
+bash /usr/share/rclone-azureblob-airgap/scripts/configure-azureblob.sh
+
+# tarball 방식이면
 bash scripts/configure-azureblob.sh
 ```
 
 인터랙티브하게 인증 방식을 선택하고 `/etc/rclone/rclone.conf` 에 추가합니다.
 
-### 옵션 B: 수동 편집
+### 옵션 B: 템플릿 참고 수동 편집
 
-`azure/rclone-azureblob.conf` 에서 원하는 섹션의 주석을 해제하고
-`/etc/rclone/rclone.conf` 에 복사합니다.
+```bash
+# deb 설치 후 배치된 전체 주석 템플릿 참고
+sudo cat /etc/rclone/rclone-azureblob.conf.template
+
+# 또는 repo 내 파일 참고
+# azure/rclone-azureblob.conf
+```
+
+원하는 섹션의 주석을 해제하고 `/etc/rclone/rclone.conf` 에 추가합니다.
 
 ```bash
 # 예시: Account Key 방식
@@ -269,14 +295,17 @@ sudo tail -f /var/log/rclone/azureblob-myblob.log
 ## 검증
 
 ```bash
-# 기본 환경 검증
+# 기본 환경 검증 (deb 설치 후)
+bash /usr/share/rclone-azureblob-airgap/scripts/verify-azureblob.sh
+
+# tarball 방식
 bash scripts/verify-azureblob.sh
 
-# 연결 + 컨테이너 목록
-bash scripts/verify-azureblob.sh --remote azblob
+# 연결 + 컨테이너 목록 (deb 설치 후)
+bash /usr/share/rclone-azureblob-airgap/scripts/verify-azureblob.sh --remote azblob
 
 # 마운트 동작 테스트까지
-bash scripts/verify-azureblob.sh --remote azblob --container mycontainer --mount
+bash /usr/share/rclone-azureblob-airgap/scripts/verify-azureblob.sh --remote azblob --container mycontainer --mount
 ```
 
 ---

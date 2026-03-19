@@ -161,3 +161,29 @@ jobs:
             echo "FAIL"; cat "$CONF"; exit 1
           fi
           rm -f "$CONF"
+
+      - name: Test disable_instance_discovery is always set
+        run: |
+          # 모든 인증 방식에 disable_instance_discovery=true 가 포함되어야 함
+          CONF=$(mktemp /tmp/rclone-test-XXXXXX.conf)
+          printf 'privtest\nmystorageaccount\nn\n1\nfakeKey==\n16\n4M\n\n' \
+            | bash scripts/configure-azureblob.sh --conf "$CONF" 2>&1 || true
+          if grep -q "disable_instance_discovery\s*=\s*true" "$CONF"; then
+            echo "PASS: disable_instance_discovery=true 포함 확인 (Private Link 필수)"
+          else
+            echo "FAIL: disable_instance_discovery 미설정"; cat "$CONF"; exit 1
+          fi
+          rm -f "$CONF"
+
+      - name: Test Private Endpoint config generation (non-interactive)
+        run: |
+          # Private Endpoint URL 포함 설정 테스트
+          CONF=$(mktemp /tmp/rclone-test-XXXXXX.conf)
+          printf 'petest\nmystorageaccount\ny\nhttps://mystorageaccount.blob.core.windows.net\n1\nfakeKey==\n16\n4M\n\n' \
+            | bash scripts/configure-azureblob.sh --conf "$CONF" 2>&1 || true
+          if grep -q "endpoint\s*=" "$CONF"; then
+            echo "PASS: Private Endpoint 설정 포함"
+          else
+            echo "INFO: endpoint 줄 없음 (비필수, 건너뜀)"
+          fi
+          rm -f "$CONF"

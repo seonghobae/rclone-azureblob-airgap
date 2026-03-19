@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 # =============================================================================
-# rclone Airgap Bootstrap Installer
-# 인터넷이 없는 Ubuntu VM에서 rclone + FUSE3 mount 환경을 완전히 셋업합니다.
+# rclone Airgap Bootstrap Installer (tarball 방식 / 레거시)
+# 인터넷이 없는 Ubuntu VM에서 rclone + FUSE3 mount 환경을 셋업합니다.
+#
+# ⚠️  권장 방법: deb 패키지 사용 (더 간단, 자동 FUSE 설치)
+#     sudo dpkg -i rclone-azureblob-airgap_*.deb
+#     → https://github.com/seonghobae/rclone-azureblob-airgap/releases/latest
+#
+# 이 스크립트는 tarball 방식 또는 deb 설치 후 수동 보완이 필요할 때 사용합니다.
+# deb 설치 시에는 /usr/share/rclone-azureblob-airgap/scripts/install.sh 경로로
+# 자동 설치됩니다.
 #
 # 지원 대상:
 #   - Ubuntu 22.04 LTS (Jammy Jellyfish)  amd64 / arm64
@@ -12,7 +20,7 @@
 #
 # 옵션:
 #   --no-fuse        FUSE/mount 패키지 설치 건너뜀 (rclone 바이너리만 설치)
-#   --prefix DIR     rclone 설치 경로 (기본값: /usr/local/bin)
+#   --prefix DIR     rclone 설치 경로 (기본값: /usr/bin)
 #   --man            man page 설치
 #   --check          설치 후 검증만 실행 (설치 건너뜀)
 #   -h, --help       이 도움말 출력
@@ -31,7 +39,8 @@ fail()  { echo -e "${RED}[FAIL]${NC}  $*" >&2; exit 1; }
 # ── 기본값 ───────────────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PKG_ROOT="$(dirname "$SCRIPT_DIR")"   # rclone-airgap/ 루트
-INSTALL_PREFIX="/usr/local/bin"
+# deb 설치 후 경로와 일치: /usr/bin (dh_usrlocal이 /usr/local/bin 차단)
+INSTALL_PREFIX="/usr/bin"
 INSTALL_MAN=false
 SKIP_FUSE=false
 CHECK_ONLY=false
