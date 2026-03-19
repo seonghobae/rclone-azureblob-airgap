@@ -164,21 +164,33 @@ jobs:
           name: deb-amd64
           path: dist/
 
-      - name: Install deb (force-depends for offline FUSE debs)
+      - name: Install deb (single dpkg -i, postinst auto-installs FUSE)
         run: |
-          sudo dpkg -i --force-depends dist/*.deb || true
-          sudo apt-get install -f -y 2>/dev/null || true
+          # --force-depends: postinst 내 dpkg -i 가 아직 미설치 의존성에도 동작하도록
+          sudo dpkg -i --force-depends dist/*.deb
 
       - name: Verify rclone binary
         run: |
           rclone version
-          rclone --help | head -5
+          rclone --help | head -3
 
-      - name: Verify share files
+      - name: Verify FUSE3 auto-installed by postinst
+        run: |
+          echo "=== FUSE 설치 검증 (postinst 자동 설치) ==="
+          dpkg -l libfuse3-3 | grep "^ii" && echo "libfuse3-3 OK" || \
+            { echo "FAIL: libfuse3-3 미설치"; exit 1; }
+          dpkg -l fuse3 | grep "^ii" && echo "fuse3 OK" || \
+            { echo "FAIL: fuse3 미설치"; exit 1; }
+          test -f /etc/fuse.conf && grep -q "user_allow_other" /etc/fuse.conf && \
+            echo "/etc/fuse.conf OK" || { echo "FAIL: /etc/fuse.conf 없거나 user_allow_other 없음"; exit 1; }
+          echo "=== FUSE 자동 설치 검증 완료 ==="
+
+      - name: Verify share files and fuse-debs cache
         run: |
           ls -la /usr/share/rclone-azureblob-airgap/scripts/
           ls -la /usr/share/rclone-azureblob-airgap/azure/
-          ls -la /usr/share/rclone-azureblob-airgap/fuse-debs/
+          echo "--- bundled fuse-debs cache ---"
+          find /usr/share/rclone-azureblob-airgap/fuse-debs/ -name "*.deb" | sort
 
       - name: Verify systemd units
         run: |
@@ -187,18 +199,13 @@ jobs:
 
       - name: Verify /etc/rclone layout
         run: |
-          ls -la /etc/rclone/ || echo "/etc/rclone 없음 (postinst 확인 필요)"
+          ls -la /etc/rclone/
           ls -la /etc/rclone/mounts/ || true
-          # postinst 가 실행됐는지 확인 (CI에서 systemd 없어도 파일은 생성됨)
-          if [ -f /etc/rclone/rclone.conf ]; then
-            echo "rclone.conf OK"
-          else
-            echo "rclone.conf 없음 — postinst 수동 실행"
-            sudo bash -c 'mkdir -p /etc/rclone && touch /etc/rclone/rclone.conf'
-          fi
-          test -f /etc/rclone/azure-env.conf && echo "azure-env.conf OK" || echo "azure-env.conf 없음 (비필수)"
+          test -f /etc/rclone/rclone.conf       && echo "rclone.conf OK"
+          test -f /etc/rclone/azure-env.conf    && echo "azure-env.conf OK"
+          test -f /etc/rclone/rclone-azureblob.conf.template && echo "template OK"
 
-      - name: Run verify-mount.sh (no-fuse mode)
+      - name: Run verify-mount.sh
         run: |
           sudo bash /usr/share/rclone-azureblob-airgap/scripts/verify-mount.sh || true
 

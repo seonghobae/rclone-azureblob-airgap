@@ -4,15 +4,92 @@ set -e
 
 SHARE_DIR="/usr/share/rclone-azureblob-airgap"
 
+# ── FUSE3 오프라인 자동 설치 헬퍼 ─────────────────────────────────────────────
+install_fuse3_offline() {
+  # 이미 설치됐으면 건너뜀
+  if dpkg -l libfuse3-3 2>/dev/null | grep -q "^ii"; then
+    echo "[rclone-airgap] libfuse3-3 이미 설치됨, 건너뜀"
+    return 0
+  fi
+
+  # OS 코드네임 감지
+  local codename=""
+  if [ -f /etc/os-release ]; then
+    codename=$(. /etc/os-release && echo "${VERSION_CODENAME:-}")
+    # 버전 ID 폴백
+    if [ -z "$codename" ]; then
+      local ver_id
+      ver_id=$(. /etc/os-release && echo "${VERSION_ID:-}")
+      case "$ver_id" in
+        22.*) codename="jammy" ;;
+        24.*) codename="noble" ;;
+      esac
+    fi
+  fi
+
+  # 지원 범위 확인
+  case "$codename" in
+    jammy|noble) ;;
+    *)
+      echo "[rclone-airgap] WARN: Ubuntu $codename 은 번들 FUSE deb 지원 외 버전"
+      echo "[rclone-airgap]       시스템 패키지로 수동 설치 필요: apt-get install fuse3 libfuse3-3"
+      return 0
+      ;;
+  esac
+
+  # 아키텍처 감지
+  local arch
+  arch=$(dpkg --print-architecture)
+
+  local deb_dir="${SHARE_DIR}/fuse-debs/${codename}"
+  if [ ! -d "$deb_dir" ]; then
+    echo "[rclone-airgap] WARN: FUSE deb 캐시 없음: $deb_dir"
+    return 0
+  fi
+
+  local libpkg fuse3pkg
+  libpkg=$(find "$deb_dir" -name "libfuse3-3_*_${arch}.deb" | head -1)
+  fuse3pkg=$(find "$deb_dir" -name "fuse3_*_${arch}.deb"    | head -1)
+
+  if [ -z "$libpkg" ] || [ -z "$fuse3pkg" ]; then
+    echo "[rclone-airgap] WARN: $deb_dir 에서 ${arch} 용 deb 없음"
+    return 0
+  fi
+
+  echo "[rclone-airgap] FUSE3 오프라인 설치 중 (codename=$codename arch=$arch)"
+  # --force-depends: 폐쇄망에서 apt 의존성 해결 불가 환경 대응
+  dpkg -i --force-depends "$libpkg" "$fuse3pkg" 2>&1 \
+    | grep -v "^(Selecting\|Preparing\|Unpacking\|Setting up\|Processing)" || true
+
+  # udev 규칙 재로드 (fuse3 패키지가 99-fuse3.rules 설치)
+  if command -v udevadm > /dev/null 2>&1; then
+    udevadm control --reload-rules 2>/dev/null || true
+    udevadm trigger            2>/dev/null || true
+  fi
+
+  # /dev/fuse 권한
+  if [ -c /dev/fuse ]; then
+    chmod 666 /dev/fuse 2>/dev/null || true
+    echo "[rclone-airgap] /dev/fuse 권한 설정 (666)"
+  else
+    echo "[rclone-airgap] WARN: /dev/fuse 없음 — 커널 모듈 확인 필요: modprobe fuse"
+  fi
+
+  echo "[rclone-airgap] FUSE3 설치 완료 (libfuse3-3 + fuse3)"
+}
+
 case "$1" in
   configure)
-    # ── fuse 그룹 생성 ────────────────────────────────────────────────────
+    # ── 1. FUSE3 자동 설치 (번들 deb 사용) ────────────────────────────────
+    install_fuse3_offline
+
+    # ── 2. fuse 그룹 생성 ─────────────────────────────────────────────────
     if ! getent group fuse > /dev/null 2>&1; then
       groupadd --system fuse
       echo "[rclone-airgap] fuse 그룹 생성됨"
     fi
 
-    # ── /etc/fuse.conf user_allow_other ───────────────────────────────────
+    # ── 3. /etc/fuse.conf user_allow_other ────────────────────────────────
     if [ ! -f /etc/fuse.conf ]; then
       echo "user_allow_other" > /etc/fuse.conf
       echo "[rclone-airgap] /etc/fuse.conf 생성 (user_allow_other)"
@@ -21,11 +98,11 @@ case "$1" in
       echo "[rclone-airgap] /etc/fuse.conf 에 user_allow_other 추가"
     fi
 
-    # ── /etc/rclone 권한 ──────────────────────────────────────────────────
+    # ── 4. /etc/rclone 권한 ───────────────────────────────────────────────
     chmod 750 /etc/rclone /etc/rclone/mounts 2>/dev/null || true
-    chmod 700 /etc/rclone/certs 2>/dev/null || true
+    chmod 700 /etc/rclone/certs              2>/dev/null || true
 
-    # ── azure-env.conf 뼈대 (없을 때만) ──────────────────────────────────
+    # ── 5. azure-env.conf 뼈대 (없을 때만) ───────────────────────────────
     if [ ! -f /etc/rclone/azure-env.conf ]; then
       install -m 600 /dev/null /etc/rclone/azure-env.conf
       cat >> /etc/rclone/azure-env.conf << 'EOF'
@@ -38,21 +115,21 @@ EOF
       echo "[rclone-airgap] /etc/rclone/azure-env.conf 생성"
     fi
 
-    # ── rclone.conf 뼈대 (없을 때만) ─────────────────────────────────────
+    # ── 6. rclone.conf 뼈대 (없을 때만) ──────────────────────────────────
     if [ ! -f /etc/rclone/rclone.conf ]; then
       install -m 640 /dev/null /etc/rclone/rclone.conf
       echo "[rclone-airgap] /etc/rclone/rclone.conf 생성"
     fi
 
-    # ── Azure 템플릿 배치 ─────────────────────────────────────────────────
+    # ── 7. Azure 설정 템플릿 배치 ─────────────────────────────────────────
     if [ ! -f /etc/rclone/rclone-azureblob.conf.template ]; then
       install -m 640 \
         "$SHARE_DIR/azure/rclone-azureblob.conf" \
         /etc/rclone/rclone-azureblob.conf.template
-      echo "[rclone-airgap] Azure Blob 설정 템플릿 배치: /etc/rclone/rclone-azureblob.conf.template"
+      echo "[rclone-airgap] Azure Blob 설정 템플릿: /etc/rclone/rclone-azureblob.conf.template"
     fi
 
-    # ── mount 예시 파일 배치 ──────────────────────────────────────────────
+    # ── 8. mount 예시 파일 배치 ───────────────────────────────────────────
     for f in "$SHARE_DIR/azure/conf-examples/"*.conf; do
       [ -f "$f" ] || continue
       dest="/etc/rclone/mounts/$(basename "$f").example"
@@ -61,20 +138,25 @@ EOF
       fi
     done
 
-    # ── systemd reload ────────────────────────────────────────────────────
-    if command -v systemctl > /dev/null 2>&1 && systemctl is-system-running --quiet 2>/dev/null; then
+    # ── 9. systemd reload ─────────────────────────────────────────────────
+    if command -v systemctl > /dev/null 2>&1 && \
+       systemctl is-system-running --quiet 2>/dev/null; then
       systemctl daemon-reload || true
       echo "[rclone-airgap] systemd daemon-reload 완료"
     fi
 
-    # ── /usr/local/bin 심볼릭 링크 (하위 호환) ───────────────────────────
+    # ── 10. /usr/local/bin 심볼릭 링크 (하위 호환) ────────────────────────
     if [ ! -L /usr/local/bin/rclone ] && [ ! -f /usr/local/bin/rclone ]; then
       ln -sf /usr/bin/rclone /usr/local/bin/rclone 2>/dev/null || true
     fi
 
+    # ── 완료 메시지 ───────────────────────────────────────────────────────
     echo ""
     echo "=============================================="
     echo " rclone-azureblob-airgap 설치 완료"
+    echo " rclone    : $(rclone version 2>/dev/null | head -1 || echo 'N/A')"
+    echo " libfuse3-3: $(dpkg -l libfuse3-3 2>/dev/null | awk '/^ii/{print $3}' || echo 'N/A')"
+    echo " fuse3     : $(dpkg -l fuse3      2>/dev/null | awk '/^ii/{print $3}' || echo 'N/A')"
     echo "=============================================="
     echo " 다음 단계:"
     echo "  1. bash /usr/share/rclone-azureblob-airgap/scripts/configure-azureblob.sh"

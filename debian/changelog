@@ -1,3 +1,11 @@
+rclone-azureblob-airgap (1.73.2-2) unstable; urgency=medium
+
+  * postinst: auto-install bundled FUSE3 debs on dpkg -i (no extra step).
+  * control: drop Recommends fuse3/libfuse3-3 (now handled by postinst).
+  * Verified: single dpkg -i installs rclone + FUSE3 in one shot.
+
+ -- seonghobae <seonghobae@users.noreply.github.com>  Thu, 19 Mar 2026 00:00:00 +0000
+
 rclone-azureblob-airgap (1.73.2-1) unstable; urgency=medium
 
   * Initial release.
