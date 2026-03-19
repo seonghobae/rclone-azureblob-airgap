@@ -15,8 +15,9 @@ override_dh_auto_install:
 	$(eval VER  := 1.73.2)
 
 	# ── rclone 바이너리 ─────────────────────────────────────────────────
+	# /usr/bin 사용 (dh_usrlocal 이 /usr/local 을 거부하므로)
 	install -D -m 755 rclone-bins/rclone-linux-$(ARCH) \
-		$(PKG)/usr/local/bin/rclone
+		$(PKG)/usr/bin/rclone
 
 	# ── scripts ──────────────────────────────────────────────────────────
 	install -D -m 755 scripts/install.sh \

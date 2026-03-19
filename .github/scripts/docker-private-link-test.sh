@@ -21,12 +21,16 @@ red() {
 info() { echo -e "\033[0;34m[INFO]\033[0m $*"; }
 step() { echo -e "\n\033[1m══ $* ══\033[0m"; }
 
-step "Private Link 환경 설정 확인"
+step "Private Link DNS 오버라이드 설정"
 
-# DNS 오버라이드 확인
-info "DNS 오버라이드 확인 (Private DNS Zone 모의):"
-cat /etc/hosts | grep "blob.core.windows.net" || true
-green "DNS 오버라이드 설정됨"
+# /etc/hosts 수정 (Dockerfile 빌드 시 read-only 이므로 런타임에서 처리)
+# 실제 Azure Private Link: DNS Zone privatelink.blob.core.windows.net 이 이 역할
+echo "127.0.0.1  devstoreaccount1.blob.core.windows.net" >>/etc/hosts
+echo "127.0.0.1  myaccount.blob.core.windows.net" >>/etc/hosts
+
+info "DNS 오버라이드 설정됨 (Private DNS Zone 모의):"
+grep "blob.core.windows.net" /etc/hosts || true
+green "DNS 오버라이드 완료"
 
 # rclone.conf 확인
 if grep -q "disable_instance_discovery.*=.*true" /etc/rclone/rclone.conf; then

@@ -67,9 +67,9 @@ EOF
       echo "[rclone-airgap] systemd daemon-reload 완료"
     fi
 
-    # ── /usr/local/bin 심볼릭 링크 (PATH 가시성) ─────────────────────────
-    if [ ! -L /usr/bin/rclone ] && [ ! -f /usr/bin/rclone ]; then
-      ln -sf /usr/local/bin/rclone /usr/bin/rclone 2>/dev/null || true
+    # ── /usr/local/bin 심볼릭 링크 (하위 호환) ───────────────────────────
+    if [ ! -L /usr/local/bin/rclone ] && [ ! -f /usr/local/bin/rclone ]; then
+      ln -sf /usr/bin/rclone /usr/local/bin/rclone 2>/dev/null || true
     fi
 
     echo ""
