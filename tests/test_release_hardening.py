@@ -29,16 +29,22 @@ class ReleaseHardeningTests(unittest.TestCase):
         self.assertIn("Resolve release deb path", workflow)
         self.assertIn('-e PACKAGE_DEB="${{ env.PACKAGE_DEB }}"', workflow)
         self.assertIn("PACKAGE_DEB=/workspace/$DEB", workflow)
+        self.assertIn("MATCHES=(dist/*.deb)", workflow)
+        self.assertIn('[ "${#MATCHES[@]}" -eq 1 ]', workflow)
 
     def test_integration_script_supports_package_runtime_path(self) -> None:
         integration_script = read_text(".github/scripts/run-integration-test.sh")
         self.assertIn('PACKAGE_DEB="${PACKAGE_DEB:-}"', integration_script)
         self.assertIn('dpkg -i "$RESOLVED_PACKAGE_DEB"', integration_script)
         self.assertIn(
+            "mapfile -t matches < <(for f in $pattern; do", integration_script
+        )
+        self.assertIn(
             "/usr/share/rclone-azureblob-airgap/scripts/verify-azureblob.sh",
             integration_script,
         )
         self.assertIn("/usr/bin/rclone", integration_script)
+        self.assertIn('red "release deb 설치 후 libfuse3-3 미설치"', integration_script)
 
     def test_package_smoke_paths_do_not_force_depends_install(self) -> None:
         release_workflow = read_text(".github/workflows/release.yml")

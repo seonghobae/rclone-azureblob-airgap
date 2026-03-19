@@ -78,8 +78,11 @@ jobs:
       - name: Resolve release deb path
         if: ${{ inputs.use_release_deb }}
         run: |
-          DEB=$(find dist/ -maxdepth 1 -name "*.deb" | head -1)
-          [ -n "$DEB" ] || { echo "::error::release deb artifact not found"; exit 1; }
+          shopt -s nullglob
+          MATCHES=(dist/*.deb)
+          shopt -u nullglob
+          [ "${#MATCHES[@]}" -eq 1 ] || { echo "::error::release deb 경로 확인 실패: dist/*.deb"; exit 1; }
+          DEB="${MATCHES[0]}"
           echo "PACKAGE_DEB=/workspace/$DEB" >> "$GITHUB_ENV"
 
       # ── Docker buildx (for --privileged + /dev/fuse) ──────────────────────

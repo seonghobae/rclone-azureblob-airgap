@@ -30,9 +30,9 @@ log_filtered_dpkg_output() {
 
 resolve_package_deb() {
 	local pattern=$1
-	local matches=()
+	local -a matches=()
 	shopt -s nullglob
-	matches=($pattern)
+	mapfile -t matches < <(for f in $pattern; do printf '%s\n' "$f"; done)
 	shopt -u nullglob
 	if [ "${#matches[@]}" -ne 1 ]; then
 		red "release deb 경로 확인 실패: $pattern"
@@ -171,6 +171,7 @@ elif [ -z "$PACKAGE_DEB" ]; then
 	fi
 else
 	red "release deb 설치 후 libfuse3-3 미설치"
+	exit 1
 fi
 
 # /dev/fuse 확인
