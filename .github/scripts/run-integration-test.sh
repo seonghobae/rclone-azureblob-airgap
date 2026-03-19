@@ -24,11 +24,11 @@ FAIL=0
 
 green() {
 	echo -e "\033[0;32m[PASS]\033[0m $*"
-	((PASS++))
+	PASS=$((PASS + 1))
 }
 red() {
 	echo -e "\033[0;31m[FAIL]\033[0m $*"
-	((FAIL++))
+	FAIL=$((FAIL + 1))
 }
 info() { echo -e "\033[0;34m[INFO]\033[0m $*"; }
 step() { echo -e "\n\033[1m══ $* ══\033[0m"; }
