@@ -13,6 +13,7 @@ python3 - <<'PY'
 import pathlib, subprocess
 for path in [
     pathlib.Path('.github/scripts/run-integration-test.sh'),
+    pathlib.Path('.github/scripts/docker-private-link-test.sh'),
     pathlib.Path('scripts/install.sh'),
     pathlib.Path('scripts/configure-azureblob.sh'),
     pathlib.Path('scripts/verify-azureblob.sh'),
@@ -34,7 +35,7 @@ PY
   - `verify-mount.sh`, `verify-azureblob.sh` 실행
 - `Integration test (Docker / Azure Private Link mock)`
   - jammy/noble Azurite E2E
-  - Private Link mock
+  - Private Link mock (`mountpoint` + mounted read/write 검증 필수)
   - `configure-azureblob.sh` 7개 인증 방식 생성 검증
 - `Release`
   - 태그 아티팩트 빌드

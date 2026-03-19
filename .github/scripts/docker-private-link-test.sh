@@ -69,6 +69,12 @@ fi
 step "FUSE 환경 확인"
 [ -c /dev/fuse ] && green "/dev/fuse 존재" || red "/dev/fuse 없음"
 chmod 666 /dev/fuse 2>/dev/null || true
+if command -v mountpoint >/dev/null 2>&1; then
+	green "mountpoint 확인: $(command -v mountpoint)"
+else
+	red "mountpoint 명령 없음"
+	exit 1
+fi
 
 step "rclone 기본 동작 (Private Link 경유)"
 
@@ -114,21 +120,30 @@ rclone mount azblob-private:private-test "$MOUNT_PT" \
 	--daemon-timeout 10s &
 sleep 3
 
-if ls "$MOUNT_PT" &>/dev/null; then
+if mountpoint -q "$MOUNT_PT" 2>/dev/null; then
 	green "FUSE 마운트 성공 (Private Endpoint 경유)"
 
 	# 읽기 검증
 	if [ -f "$MOUNT_PT/hello.txt" ]; then
 		green "마운트된 파일 읽기 성공"
 	else
-		red "마운트된 파일 없음 (ls: $(ls $MOUNT_PT))"
+		red "마운트된 파일 없음 (entries: $(ls "$MOUNT_PT" 2>/dev/null || printf '<unavailable>'))"
 	fi
 
 	# 쓰기 검증
-	echo "written-via-private-link" >"$MOUNT_PT/write-test.txt" &&
+	WRITE_BASENAME="write-test-$(date +%s).txt"
+	WRITE_CONTENT="written-via-private-link"
+	echo "$WRITE_CONTENT" >"$MOUNT_PT/$WRITE_BASENAME" &&
 		green "마운트 쓰기 성공" || red "마운트 쓰기 실패"
+
+	WRITE_BACK_CONTENT=$(cat "$MOUNT_PT/$WRITE_BASENAME" 2>/dev/null || echo "")
+	if [ "$WRITE_BACK_CONTENT" = "$WRITE_CONTENT" ]; then
+		green "마운트 쓰기 내용 재확인 성공"
+	else
+		red "마운트 쓰기 내용 불일치: '$WRITE_BACK_CONTENT'"
+	fi
 else
-	red "FUSE 마운트 실패"
+	red "FUSE 마운트 실패 (mountpoint 미감지, entries: $(ls "$MOUNT_PT" 2>/dev/null || printf '<unavailable>'))"
 fi
 
 fusermount3 -u "$MOUNT_PT" 2>/dev/null || true

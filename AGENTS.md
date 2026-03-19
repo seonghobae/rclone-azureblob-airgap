@@ -74,6 +74,6 @@ rclone-bins/ — 바이너리 (.gitignore, CI에서 다운로드)
 |--------|----------|
 | Build deb smoke-test | amd64+arm64 실제 설치, FUSE3 자동 설치, /etc/rclone 레이아웃, systemd 유닛, bundled examples/fuse-debs 검증 |
 | Docker integration (jammy/noble) | Azurite + rclone CLI + FUSE mount + verify-azureblob.sh |
-| Private Link mock | DNS 오버라이드, disable_instance_discovery, Azurite endpoint |
+| Private Link mock | DNS 오버라이드, disable_instance_discovery, Azurite endpoint, `mountpoint` 기반 FUSE 검증, mounted read/write |
 | configure-azureblob.sh | 비인터랙티브 7개 인증 방식(Account Key, SAS, ConnStr, SP Secret/Cert, MSI System/User, env_auth) 생성 |
 | Release workflow | tagged deb smoke-test + reusable integration workflow 성공 후에만 GitHub Release 생성 |

@@ -123,6 +123,7 @@ push/PR → main
         ├── Docker integration {jammy,noble}  (병렬)
         │     Azurite + FUSE + rclone E2E
         ├── Private Link DNS mock test
+        │     DNS override + `mountpoint` + mounted read/write
         └── configure-azureblob.sh 비인터랙티브 테스트
 
 push → tag v*
@@ -136,6 +137,7 @@ push → tag v*
         ├── Reusable Integration test workflow
         │     ├── Docker integration {jammy,noble}
         │     ├── Private Link DNS mock test
+        │     │     DNS override + `mountpoint` + mounted read/write
         │     └── configure-azureblob.sh 비인터랙티브 테스트
         └── Create GitHub Release (only after smoke-release + integration success)
 ```
