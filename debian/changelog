@@ -1,3 +1,18 @@
+rclone-azureblob-airgap (1.73.2-11) unstable; urgency=medium
+
+  * release.yml: require reusable integration-test workflow on tag releases
+    before creating a GitHub Release.
+  * build/release smoke-tests: install the package with plain dpkg -i,
+    and verify both packaged systemd templates.
+  * postinst/install.sh/run-integration-test.sh: stop masking dpkg failures
+    during offline FUSE installs and fail loudly on verification regressions.
+  * run-integration-test.sh and verify-azureblob.sh: require real mountpoint
+    detection instead of treating directory ls as mount success.
+  * docs: add missing canonical workflow/agent/harness docs and align
+    release/install guidance with the packaged filesystem layout.
+
+ -- seonghobae <seonghobae@users.noreply.github.com>  Thu, 19 Mar 2026 00:00:00 +0000
+
 rclone-azureblob-airgap (1.73.2-10) unstable; urgency=medium
 
   * release.yml: add amd64+arm64 smoke-release gate so GitHub Release is

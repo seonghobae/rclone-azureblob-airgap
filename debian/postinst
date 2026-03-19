@@ -4,6 +4,11 @@ set -e
 
 SHARE_DIR="/usr/share/rclone-azureblob-airgap"
 
+log_filtered_dpkg_output() {
+  local log_file=$1
+  grep -Ev "^(Reading|Selecting|Preparing|Unpacking|Setting up|Processing)" "$log_file" || true
+}
+
 # ── FUSE3 오프라인 자동 설치 헬퍼 ─────────────────────────────────────────────
 install_fuse3_offline() {
   # 이미 설치됐으면 건너뜀
@@ -58,8 +63,16 @@ install_fuse3_offline() {
 
   echo "[rclone-airgap] FUSE3 오프라인 설치 중 (codename=$codename arch=$arch)"
   # --force-depends: 폐쇄망에서 apt 의존성 해결 불가 환경 대응
-  dpkg -i --force-depends "$libpkg" "$fuse3pkg" 2>&1 \
-    | grep -v "^(Selecting\|Preparing\|Unpacking\|Setting up\|Processing)" || true
+  local dpkg_log
+  dpkg_log=$(mktemp /tmp/rclone-airgap-postinst-XXXXXX.log)
+  if ! dpkg -i --force-depends "$libpkg" "$fuse3pkg" >"$dpkg_log" 2>&1; then
+    log_filtered_dpkg_output "$dpkg_log"
+    rm -f "$dpkg_log"
+    echo "[rclone-airgap] ERROR: FUSE3 오프라인 설치 실패" >&2
+    exit 1
+  fi
+  log_filtered_dpkg_output "$dpkg_log"
+  rm -f "$dpkg_log"
 
   # udev 규칙 재로드 (fuse3 패키지가 99-fuse3.rules 설치)
   if command -v udevadm > /dev/null 2>&1; then

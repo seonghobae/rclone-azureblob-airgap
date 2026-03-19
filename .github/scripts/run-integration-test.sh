@@ -22,6 +22,11 @@ WORKSPACE="/workspace"
 PASS=0
 FAIL=0
 
+log_filtered_dpkg_output() {
+	local log_file=$1
+	grep -Ev "^(Reading|Selecting|Preparing|Unpacking|Setting up|Processing)" "$log_file" || true
+}
+
 green() {
 	echo -e "\033[0;32m[PASS]\033[0m $*"
 	PASS=$((PASS + 1))
@@ -114,10 +119,18 @@ if dpkg -l libfuse3-3 2>/dev/null | grep -q "^ii"; then
 	green "libfuse3-3 이미 설치됨 (시스템 패키지 활용)"
 else
 	if [ -d "$DEB_DIR" ]; then
-		dpkg -i --force-depends \
+		DPKG_LOG=$(mktemp /tmp/fuse-install-XXXXXX.log)
+		if ! dpkg -i --force-depends \
 			"${DEB_DIR}/libfuse3-3_"*"_${ARCH}.deb" \
 			"${DEB_DIR}/fuse3_"*"_${ARCH}.deb" \
-			2>&1 | tail -5 || true
+			>"$DPKG_LOG" 2>&1; then
+			log_filtered_dpkg_output "$DPKG_LOG"
+			red "FUSE3 오프라인 deb 설치 실패"
+			rm -f "$DPKG_LOG"
+			exit 1
+		fi
+		log_filtered_dpkg_output "$DPKG_LOG"
+		rm -f "$DPKG_LOG"
 		green "FUSE3 오프라인 deb 설치 완료"
 	else
 		info "DEB_DIR 없음: $DEB_DIR (시스템 fuse3 사용)"
@@ -222,7 +235,7 @@ MOUNT_PID=$!
 sleep 3
 
 # 마운트 확인
-if mountpoint -q "$MOUNT_POINT" 2>/dev/null || ls "$MOUNT_POINT" &>/dev/null; then
+if mountpoint -q "$MOUNT_POINT" 2>/dev/null; then
 	green "FUSE 마운트 성공: $MOUNT_POINT"
 
 	# 마운트된 파일 읽기
@@ -285,7 +298,7 @@ bash "${WORKSPACE}/scripts/verify-azureblob.sh" \
 	--remote azurite \
 	--container testcontainer \
 	--conf /etc/rclone/rclone.conf \
-	2>/dev/null || true
+	2>/dev/null
 green "verify-azureblob.sh 완료"
 
 # ── 최종 결과 ─────────────────────────────────────────────────────────────────

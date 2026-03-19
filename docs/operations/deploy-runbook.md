@@ -6,6 +6,7 @@
 - [ ] GitHub Actions 모든 워크플로 green (`gh run list --limit 5`)
 - [ ] `debian/changelog` 버전 항목 추가됨
 - [ ] `README.md` 설치 안내의 버전 번호가 새 버전과 일치
+- [ ] `tests/test_release_hardening.py` 통과
 
 ## 배포 실행
 
@@ -70,4 +71,5 @@ sudo chmod 666 /dev/fuse
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl list-unit-files | grep rclone
+systemd-analyze verify /lib/systemd/system/rclone-azureblob@.service /lib/systemd/system/rclone-mount@.service
 ```

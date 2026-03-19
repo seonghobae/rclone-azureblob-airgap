@@ -116,7 +116,7 @@ jobs:
 
       - name: Install deb from tagged build
         run: |
-          sudo dpkg -i --force-depends dist/*.deb
+          sudo dpkg -i dist/*.deb
 
       - name: Verify release package install
         run: |
@@ -133,6 +133,12 @@ jobs:
           COUNT=$(find /usr/share/rclone-azureblob-airgap/fuse-debs/ -name "*.deb" | wc -l)
           [ "$COUNT" -eq 8 ]
 
+      - name: Verify systemd units
+        run: |
+          systemd-analyze verify \
+            /lib/systemd/system/rclone-azureblob@.service \
+            /lib/systemd/system/rclone-mount@.service
+
       - name: Run verify-mount.sh
         run: |
           sudo bash /usr/share/rclone-azureblob-airgap/scripts/verify-mount.sh --allow-missing-fuse
@@ -141,10 +147,15 @@ jobs:
         run: |
           bash /usr/share/rclone-azureblob-airgap/scripts/verify-azureblob.sh --allow-missing-fuse
 
+  release-integration:
+    name: Release integration coverage
+    needs: build-release-debs
+    uses: ./.github/workflows/integration-test.yml
+
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-22.04
-    needs: [build-release-debs, smoke-release]
+    needs: [build-release-debs, smoke-release, release-integration]
     permissions:
       contents: write
 
@@ -174,7 +185,7 @@ jobs:
           - **rclone ${RCLONE_VER}** (amd64 / arm64)
           - **FUSE3 오프라인 deb**: Ubuntu 22.04(jammy) / 24.04(noble) × amd64/arm64
           - **Azure Blob 인증 템플릿**: Account Key, SAS URL, Connection String, Service Principal, MSI
-          - **systemd 유닛**: \`rclone-azureblob@.service\`
+          - **systemd 유닛**: \`rclone-azureblob@.service\`, \`rclone-mount@.service\`
           - **Azure Private Link** 대응: \`disable_instance_discovery = true\` 기본값
 
           ### 설치
@@ -184,7 +195,7 @@ jobs:
           curl -LO https://github.com/seonghobae/rclone-azureblob-airgap/releases/download/v${VER}/rclone-azureblob-airgap_${VER}_amd64.deb
 
           # 2. VM으로 전송 후 설치
-          sudo dpkg -i --force-depends rclone-azureblob-airgap_${VER}_amd64.deb
+          sudo dpkg -i rclone-azureblob-airgap_${VER}_amd64.deb
 
           # 3. Azure Blob 설정
           bash /usr/share/rclone-azureblob-airgap/scripts/configure-azureblob.sh

@@ -178,8 +178,7 @@ jobs:
 
       - name: Install deb (single dpkg -i, postinst auto-installs FUSE)
         run: |
-          # --force-depends: postinst 내 dpkg -i 가 아직 미설치 의존성에도 동작하도록
-          sudo dpkg -i --force-depends dist/*.deb
+          sudo dpkg -i dist/*.deb
 
       - name: Verify rclone binary
         run: |
@@ -236,7 +235,10 @@ jobs:
       - name: Verify systemd units
         run: |
           ls -la /lib/systemd/system/rclone-azureblob@.service
-          systemd-analyze verify /lib/systemd/system/rclone-azureblob@.service 2>/dev/null || true
+          ls -la /lib/systemd/system/rclone-mount@.service
+          systemd-analyze verify \
+            /lib/systemd/system/rclone-azureblob@.service \
+            /lib/systemd/system/rclone-mount@.service
 
       - name: Verify /etc/rclone layout
         run: |

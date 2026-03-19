@@ -42,6 +42,11 @@ fail() {
 	exit 1
 }
 
+log_filtered_dpkg_output() {
+	local log_file=$1
+	grep -Ev "^(Reading|Selecting|Preparing|Unpacking|Setting up|Processing)" "$log_file" || true
+}
+
 # ── 기본값 ───────────────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PKG_ROOT="$(dirname "$SCRIPT_DIR")" # rclone-airgap/ 루트
@@ -236,7 +241,15 @@ install_fuse() {
 
 	# dpkg --force-depends 로 의존성 미충족 경고를 억제하며 설치
 	# (인터넷 없이 apt 의존성 해결 불가 환경 대응)
-	dpkg -i --force-depends "${pkgs_ordered[@]}" 2>&1 | grep -v "^(Reading\|Selecting\|Preparing\|Unpacking\|Setting up\|Processing)" || true
+	local dpkg_log
+	dpkg_log=$(mktemp /tmp/rclone-airgap-install-XXXXXX.log)
+	if ! dpkg -i --force-depends "${pkgs_ordered[@]}" >"$dpkg_log" 2>&1; then
+		log_filtered_dpkg_output "$dpkg_log"
+		rm -f "$dpkg_log"
+		fail "FUSE3 패키지 설치 실패"
+	fi
+	log_filtered_dpkg_output "$dpkg_log"
+	rm -f "$dpkg_log"
 
 	# udev 규칙 적용 (fuse3 패키지가 설치하는 /etc/udev/rules.d/99-fuse3.rules)
 	if command -v udevadm &>/dev/null; then
@@ -350,8 +363,8 @@ install_azure_assets() {
 		{
 			echo ""
 			echo "# ── Azure Blob Storage (주석 처리된 템플릿) ──────────────"
-			echo "# bash scripts/configure-azureblob.sh 로 설정하거나"
-			echo "# azure/rclone-azureblob.conf 를 참고해 직접 편집하세요."
+			echo "# bash ${PKG_ROOT}/scripts/configure-azureblob.sh 로 설정하거나"
+			echo "# ${PKG_ROOT}/azure/rclone-azureblob.conf 를 참고해 직접 편집하세요."
 		} >>/etc/rclone/rclone.conf
 		ok "Azure Blob 안내 주석 추가됨: /etc/rclone/rclone.conf"
 	fi
@@ -416,14 +429,14 @@ print_summary() {
 	echo ""
 	echo "  ─── Azure Blob Storage 설정 순서 ──────────────"
 	echo "  # 1단계: 인터랙티브 설정 도우미"
-	echo "  bash scripts/configure-azureblob.sh"
+	echo "  bash ${PKG_ROOT}/scripts/configure-azureblob.sh"
 	echo ""
 	echo "  # 또는 수동 편집"
 	echo "  vi /etc/rclone/rclone.conf"
 	echo "  # (참고 템플릿: /etc/rclone/rclone-azureblob.conf.template)"
 	echo ""
 	echo "  # 2단계: 연결 검증"
-	echo "  bash scripts/verify-azureblob.sh --remote <이름>"
+	echo "  bash ${PKG_ROOT}/scripts/verify-azureblob.sh --remote <이름>"
 	echo ""
 	echo "  # 3단계: 포어그라운드 마운트 테스트"
 	echo "  mkdir -p /mnt/azureblob"
@@ -435,8 +448,8 @@ print_summary() {
 	echo "  systemctl enable rclone-azureblob@<이름>.service"
 	echo ""
 	echo "  ─── 검증 명령어 ────────────────────────────────"
-	echo "  bash scripts/verify-mount.sh"
-	echo "  bash scripts/verify-azureblob.sh --remote <이름> --container <컨테이너>"
+	echo "  bash ${PKG_ROOT}/scripts/verify-mount.sh"
+	echo "  bash ${PKG_ROOT}/scripts/verify-azureblob.sh --remote <이름> --container <컨테이너>"
 	echo "=================================================="
 }
 

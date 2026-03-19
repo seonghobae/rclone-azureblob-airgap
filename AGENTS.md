@@ -11,7 +11,7 @@
 fakeroot dpkg-buildpackage -b -us -uc
 
 # 설치 검증 (로컬, Ubuntu 환경 필요)
-sudo dpkg -i --force-depends ../rclone-azureblob-airgap_*.deb
+sudo dpkg -i ../rclone-azureblob-airgap_*.deb
 sudo bash /usr/share/rclone-azureblob-airgap/scripts/verify-mount.sh
 
 # Azure 연결 검증
@@ -66,6 +66,7 @@ rclone-bins/ — 바이너리 (.gitignore, CI에서 다운로드)
 - 버그 수정: `fix:` 커밋 메시지
 - 문서 갱신: `docs:` 커밋 메시지
 - 릴리즈: `git tag v{rclone_ver}-{pkg_rev}` → push → Release 워크플로 자동 실행
+- canonical docs: `docs/engineering/harness-engineering.md`, `docs/agents/README.md`, `docs/workflow/pr-continuity.md`, `docs/workflow/one-day-delivery-plan.md`, `docs/coderabbit/review-commands.md`
 
 ## 테스트 범위
 
@@ -75,3 +76,4 @@ rclone-bins/ — 바이너리 (.gitignore, CI에서 다운로드)
 | Docker integration (jammy/noble) | Azurite + rclone CLI + FUSE mount + verify-azureblob.sh |
 | Private Link mock | DNS 오버라이드, disable_instance_discovery, Azurite endpoint |
 | configure-azureblob.sh | 비인터랙티브 7개 인증 방식(Account Key, SAS, ConnStr, SP Secret/Cert, MSI System/User, env_auth) 생성 |
+| Release workflow | tagged deb smoke-test + reusable integration workflow 성공 후에만 GitHub Release 생성 |

@@ -129,10 +129,15 @@ push → tag v*
   └── Release
         ├── Build release deb {amd64,arm64}
         ├── Smoke release {amd64,arm64}
-        │     ├── dpkg -i on tagged artifact
+        │     ├── plain dpkg -i on tagged artifact
         │     ├── FUSE3 auto-install verification
+        │     ├── systemd-analyze verify
         │     └── verify-mount.sh, verify-azureblob.sh (--allow-missing-fuse)
-        └── Create GitHub Release (only after smoke-release success)
+        ├── Reusable Integration test workflow
+        │     ├── Docker integration {jammy,noble}
+        │     ├── Private Link DNS mock test
+        │     └── configure-azureblob.sh 비인터랙티브 테스트
+        └── Create GitHub Release (only after smoke-release + integration success)
 ```
 
 ---

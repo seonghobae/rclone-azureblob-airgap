@@ -4,10 +4,10 @@ set -e
 
 case "$1" in
   remove|upgrade|deconfigure)
-    # 실행 중인 rclone-azureblob 서비스 모두 중지
+    # 실행 중인 rclone-azureblob / rclone-mount 서비스 모두 중지
     if command -v systemctl > /dev/null 2>&1 && systemctl is-system-running --quiet 2>/dev/null; then
       for svc in $(systemctl list-units --type=service --state=running 2>/dev/null \
-                    | grep "rclone-azureblob@" | awk '{print $1}' || true); do
+                    | grep -E "rclone-(azureblob|mount)@" | awk '{print $1}' || true); do
         echo "[rclone-airgap] 서비스 중지: $svc"
         systemctl stop "$svc" || true
       done

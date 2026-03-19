@@ -12,7 +12,7 @@
 | `fuse3` postinst 자동 설치 | `dpkg -l fuse3 \| grep '^ii'` |
 | `/etc/fuse.conf` user_allow_other 포함 | `grep user_allow_other /etc/fuse.conf` |
 | `/etc/rclone/` 디렉토리 구조 생성 | `ls /etc/rclone/` 성공 |
-| systemd 유닛 등록 | `systemd-analyze verify rclone-azureblob@.service` |
+| systemd 유닛 등록 | `systemd-analyze verify rclone-azureblob@.service rclone-mount@.service` |
 
 ### Azure Blob 연결
 
@@ -40,10 +40,11 @@
 | Build deb package | amd64 + arm64 빌드 성공, amd64 + arm64 smoke-test PASS |
 | Integration test | jammy + noble Docker 테스트 PASS=20 FAIL=0 |
 | Private Link mock | DNS mock + Azurite endpoint + FUSE PASS |
-| Release | tag 빌드한 deb를 amd64 + arm64 smoke-test 통과 후 GitHub Release 에 deb + sha256 4파일 업로드 |
+| Release | tag 빌드한 deb를 amd64 + arm64 smoke-test + reusable integration workflow 통과 후 GitHub Release 에 deb + sha256 4파일 업로드 |
 
 ## 배포 완료 기준
 
 - GitHub Release 에 `_amd64.deb`, `_arm64.deb`, 각각의 `.sha256` 4파일 존재
 - 모든 CI 워크플로 success
 - README.md 설치 안내가 실제 동작과 일치
+- release 태그 run 도 Azure Blob integration coverage 를 다시 수행함

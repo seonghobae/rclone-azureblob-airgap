@@ -72,6 +72,8 @@ sudo dpkg -i rclone-azureblob-airgap_{VER}_amd64.deb
 - ✅ `/etc/rclone/rclone-azureblob.conf.template` Azure 설정 템플릿 배치
 - ✅ `rclone-azureblob@.service` systemd 유닛 등록
 
+릴리스 태그 경로에서도 같은 `.deb` 에 대해 amd64/arm64 smoke-test 와 Azure Blob integration workflow 가 다시 실행된 뒤에만 GitHub Release 가 생성됩니다.
+
 ### 4단계: Azure Blob 설정
 
 ```bash

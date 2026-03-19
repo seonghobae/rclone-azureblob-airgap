@@ -157,13 +157,13 @@ if [[ -f "$RCLONE_CONF" ]]; then
 		done <<<"$AZURE_REMOTES"
 	else
 		check_warn "azureblob type remote 가 conf 에 없습니다."
-		echo "    → bash scripts/configure-azureblob.sh 로 설정하거나"
-		echo "      azure/rclone-azureblob.conf 에서 원하는 섹션을 복사하세요."
+		echo "    → bash /usr/share/rclone-azureblob-airgap/scripts/configure-azureblob.sh 로 설정하거나"
+		echo "      /usr/share/rclone-azureblob-airgap/azure/rclone-azureblob.conf 에서 원하는 섹션을 복사하세요."
 	fi
 else
 	check_warn "conf 파일 없음: $RCLONE_CONF"
 	echo "    → sudo dpkg -i rclone-azureblob-airgap_*.deb  (또는) sudo bash /usr/share/rclone-azureblob-airgap/scripts/install.sh 를 먼저 실행하거나"
-	echo "      mkdir -p /etc/rclone && cp azure/rclone-azureblob.conf /etc/rclone/rclone.conf"
+	echo "      mkdir -p /etc/rclone && cp /usr/share/rclone-azureblob-airgap/azure/rclone-azureblob.conf /etc/rclone/rclone.conf"
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -279,7 +279,7 @@ if [[ "$DO_MOUNT" == true ]] && [[ -n "$REMOTE_NAME" ]] && [[ -n "$CONTAINER_NAM
 	MOUNT_PID=$!
 	sleep 3
 
-	if mountpoint -q "$TMPDIR_MNT" 2>/dev/null || ls "$TMPDIR_MNT" &>/dev/null; then
+	if mountpoint -q "$TMPDIR_MNT" 2>/dev/null; then
 		check_pass "Azure Blob 마운트 성공!"
 		item_count=$(ls "$TMPDIR_MNT" 2>/dev/null | wc -l)
 		echo "    → 마운트된 항목 수: $item_count"
@@ -313,7 +313,9 @@ if command -v systemctl &>/dev/null; then
 	fi
 
 	if [[ -f /etc/systemd/system/rclone-azureblob@.service ]]; then
-		check_pass "rclone-azureblob@.service 템플릿 설치됨"
+		check_pass "rclone-azureblob@.service 템플릿 설치됨 (/etc/systemd/system)"
+	elif [[ -f /lib/systemd/system/rclone-azureblob@.service ]]; then
+		check_pass "rclone-azureblob@.service 템플릿 설치됨 (/lib/systemd/system)"
 	else
 		check_warn "rclone-azureblob@.service 미설치"
 		echo "    → sudo dpkg -i rclone-azureblob-airgap_*.deb  (또는) sudo bash /usr/share/rclone-azureblob-airgap/scripts/install.sh 로 설치하거나"
@@ -336,8 +338,8 @@ else
 fi
 echo ""
 echo "  빠른 사용 예시:"
-echo "  bash scripts/configure-azureblob.sh          # 설정 추가"
-echo "  bash scripts/verify-azureblob.sh --remote <NAME> --container <CONT> --mount"
+echo "  bash /usr/share/rclone-azureblob-airgap/scripts/configure-azureblob.sh          # 설정 추가"
+echo "  bash /usr/share/rclone-azureblob-airgap/scripts/verify-azureblob.sh --remote <NAME> --container <CONT> --mount"
 echo "=================================================="
 
 exit $FAIL
