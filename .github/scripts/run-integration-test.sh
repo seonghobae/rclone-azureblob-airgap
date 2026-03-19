@@ -146,6 +146,9 @@ green "rclone 설치 완료"
 step "5. rclone.conf 생성"
 mkdir -p /etc/rclone
 
+# RCLONE_CONFIG 환경 변수로 모든 rclone 명령에 적용
+export RCLONE_CONFIG=/etc/rclone/rclone.conf
+
 # Azurite 기본 Connection String (devstoreaccount1)
 AZURITE_CONNSTR="DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
 
