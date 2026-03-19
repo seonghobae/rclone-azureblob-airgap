@@ -8,7 +8,7 @@
 3. CI green 확인
 4. git tag v{rclone_ver}-{pkg_rev}  (예: v{rclone_ver}-{pkg_rev})
 5. git push origin v{rclone_ver}-{pkg_rev}
-6. Release 워크플로 자동 실행 → release용 deb 빌드 + amd64/arm64 smoke-test + reusable integration workflow
+6. Release 워크플로 자동 실행 → release용 deb 빌드 + amd64/arm64 smoke-test + tagged `amd64` `.deb` 설치형 reusable integration workflow
 7. smoke-test 와 integration 성공 시에만 GitHub Release 생성
 8. 사용자: GitHub Release 에서 deb 다운로드 → VM 전송 → dpkg -i
 ```

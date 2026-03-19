@@ -151,6 +151,9 @@ jobs:
     name: Release integration coverage
     needs: build-release-debs
     uses: ./.github/workflows/integration-test.yml
+    with:
+      use_release_deb: true
+      release_deb_artifact: release-deb-amd64
 
   create-release:
     name: Create GitHub Release

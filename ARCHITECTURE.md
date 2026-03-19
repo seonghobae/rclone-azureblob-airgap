@@ -136,6 +136,7 @@ push → tag v*
         │     └── verify-mount.sh, verify-azureblob.sh (--allow-missing-fuse)
         ├── Reusable Integration test workflow
         │     ├── Docker integration {jammy,noble}
+        │     │     tagged `amd64` deb install + packaged verify path
         │     ├── Private Link DNS mock test
         │     │     DNS override + `mountpoint` + mounted read/write
         │     └── configure-azureblob.sh 비인터랙티브 테스트

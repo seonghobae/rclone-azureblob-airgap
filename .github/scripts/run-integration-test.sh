@@ -19,12 +19,26 @@ set -euo pipefail
 
 CODENAME="${UBUNTU_CODENAME:-jammy}"
 WORKSPACE="/workspace"
+PACKAGE_DEB="${PACKAGE_DEB:-}"
 PASS=0
 FAIL=0
 
 log_filtered_dpkg_output() {
 	local log_file=$1
 	grep -Ev "^(Reading|Selecting|Preparing|Unpacking|Setting up|Processing)" "$log_file" || true
+}
+
+resolve_package_deb() {
+	local pattern=$1
+	local -a matches=()
+	shopt -s nullglob
+	mapfile -t matches < <(for f in $pattern; do printf '%s\n' "$f"; done)
+	shopt -u nullglob
+	if [ "${#matches[@]}" -ne 1 ]; then
+		red "release deb 경로 확인 실패: $pattern"
+		exit 1
+	fi
+	printf '%s\n' "${matches[0]}"
 }
 
 green() {
@@ -42,10 +56,11 @@ step() { echo -e "\n\033[1m══ $* ══\033[0m"; }
 step "1. 기본 도구 설치"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
-apt-get install -y --no-install-recommends \
-	curl ca-certificates unzip fuse3 libfuse3-3 \
-	python3 \
-	2>/dev/null
+BASE_PACKAGES=(curl ca-certificates unzip python3)
+if [ -z "$PACKAGE_DEB" ]; then
+	BASE_PACKAGES+=(fuse3 libfuse3-3)
+fi
+apt-get install -y --no-install-recommends "${BASE_PACKAGES[@]}" 2>/dev/null
 
 # Node.js 20 LTS + npm 설치
 # NodeSource nodejs 패키지(>=18)는 npm 포함
@@ -109,15 +124,34 @@ else
 	sleep 3
 fi
 
-# ── 3. FUSE3 오프라인 deb 설치 ─────────────────────────────────────────────────
-step "3. FUSE3 오프라인 deb 설치 (codename=$CODENAME)"
+# ── 3. 패키지/FUSE 준비 ────────────────────────────────────────────────────────
+step "3. 패키지/FUSE 준비 (codename=$CODENAME)"
 ARCH=$(dpkg --print-architecture)
 DEB_DIR="${WORKSPACE}/fuse-debs/${CODENAME}"
+RESOLVED_PACKAGE_DEB=""
+
+if [ -n "$PACKAGE_DEB" ]; then
+	RESOLVED_PACKAGE_DEB=$(resolve_package_deb "$PACKAGE_DEB")
+	green "release deb 확인: $RESOLVED_PACKAGE_DEB"
+	DPKG_LOG=$(mktemp /tmp/release-deb-install-XXXXXX.log)
+	if ! dpkg -i "$RESOLVED_PACKAGE_DEB" >"$DPKG_LOG" 2>&1; then
+		log_filtered_dpkg_output "$DPKG_LOG"
+		red "release deb 설치 실패"
+		rm -f "$DPKG_LOG"
+		exit 1
+	fi
+	log_filtered_dpkg_output "$DPKG_LOG"
+	rm -f "$DPKG_LOG"
+	green "release deb 설치 완료"
+fi
 
 # 이미 설치됐는지 확인
 if dpkg -l libfuse3-3 2>/dev/null | grep -q "^ii"; then
 	green "libfuse3-3 이미 설치됨 (시스템 패키지 활용)"
-else
+	if [ -n "$PACKAGE_DEB" ] && dpkg -l fuse3 2>/dev/null | grep -q "^ii"; then
+		green "fuse3 release deb postinst 설치 확인"
+	fi
+elif [ -z "$PACKAGE_DEB" ]; then
 	if [ -d "$DEB_DIR" ]; then
 		DPKG_LOG=$(mktemp /tmp/fuse-install-XXXXXX.log)
 		if ! dpkg -i --force-depends \
@@ -135,6 +169,9 @@ else
 	else
 		info "DEB_DIR 없음: $DEB_DIR (시스템 fuse3 사용)"
 	fi
+else
+	red "release deb 설치 후 libfuse3-3 미설치"
+	exit 1
 fi
 
 # /dev/fuse 확인
@@ -151,9 +188,18 @@ green "/etc/fuse.conf: user_allow_other 설정"
 
 # ── 4. rclone 설치 ────────────────────────────────────────────────────────────
 step "4. rclone 바이너리 설치"
-install -m 755 "${WORKSPACE}/rclone-bins/rclone-linux-amd64" /usr/local/bin/rclone
-rclone version | head -1
-green "rclone 설치 완료"
+if [ -n "$PACKAGE_DEB" ]; then
+	test -x /usr/bin/rclone || {
+		red "/usr/bin/rclone 미설치"
+		exit 1
+	}
+	/usr/bin/rclone version | head -1
+	green "release deb 경로 rclone 설치 완료"
+else
+	install -m 755 "${WORKSPACE}/rclone-bins/rclone-linux-amd64" /usr/local/bin/rclone
+	rclone version | head -1
+	green "rclone 설치 완료"
+fi
 
 # ── 5. rclone.conf 생성 (Azurite + disable_instance_discovery) ───────────────
 step "5. rclone.conf 생성"
@@ -294,7 +340,12 @@ fi
 
 # ── 9. verify-azureblob.sh 실행 ───────────────────────────────────────────────
 step "9. verify-azureblob.sh 실행"
-bash "${WORKSPACE}/scripts/verify-azureblob.sh" \
+VERIFY_AZURE_SCRIPT="${WORKSPACE}/scripts/verify-azureblob.sh"
+if [ -n "$PACKAGE_DEB" ]; then
+	VERIFY_AZURE_SCRIPT="/usr/share/rclone-azureblob-airgap/scripts/verify-azureblob.sh"
+	green "패키지 verify-azureblob.sh 경로 사용: $VERIFY_AZURE_SCRIPT"
+fi
+bash "$VERIFY_AZURE_SCRIPT" \
 	--remote azurite \
 	--container testcontainer \
 	--conf /etc/rclone/rclone.conf \
