@@ -39,14 +39,20 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get install -y --no-install-recommends \
 	curl ca-certificates unzip fuse3 libfuse3-3 \
-	nodejs npm python3 \
+	python3 \
 	2>/dev/null
 
+# Node.js 20 LTS 설치 (jammy/noble 기본 nodejs는 너무 구버전)
+if ! node --version 2>/dev/null | grep -qE "^v(18|20|22)\."; then
+	curl -fsSL https://deb.nodesource.com/setup_20.x | bash - 2>/dev/null
+	apt-get install -y --no-install-recommends nodejs 2>/dev/null
+fi
+node --version
 green "기본 도구 설치 완료"
 
 # ── 2. Azurite 설치 및 시작 ───────────────────────────────────────────────────
 step "2. Azurite (Azure Storage Emulator) 설치 및 시작"
-npm install -g azurite --silent 2>/dev/null
+npm install -g azurite 2>/dev/null
 mkdir -p /tmp/azurite-data
 
 # Azurite를 127.0.0.1 바인딩으로 시작 (Private Link 모의: 외부 접근 차단)

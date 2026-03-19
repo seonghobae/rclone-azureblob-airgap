@@ -18,17 +18,18 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV RCLONE_VERSION=1.73.2
 
-# ── 기본 도구 설치 ────────────────────────────────────────────────────────────
+# ── 기본 도구 + Node.js 20 LTS 설치 ──────────────────────────────────────────
 RUN apt-get update -qq && \
     apt-get install -y --no-install-recommends \
       curl ca-certificates unzip \
       fuse3 libfuse3-3 \
-      nodejs npm \
       iproute2 iputils-ping dnsutils \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Azurite 설치 ─────────────────────────────────────────────────────────────
-RUN npm install -g azurite --silent 2>/dev/null
+RUN npm install -g azurite
 
 # ── rclone 바이너리 복사 (CI 에서 빌드 컨텍스트로 전달됨) ───────────────────
 COPY rclone-bins/rclone-linux-amd64 /usr/local/bin/rclone
