@@ -52,7 +52,11 @@ green "기본 도구 설치 완료"
 
 # ── 2. Azurite 설치 및 시작 ───────────────────────────────────────────────────
 step "2. Azurite (Azure Storage Emulator) 설치 및 시작"
-npm install -g azurite 2>/dev/null
+# npm 오류를 stderr 로 출력하면서 실패 시 명확한 메시지 출력
+if ! npm install -g azurite 2>&1; then
+	red "Azurite npm 설치 실패"
+	exit 1
+fi
 mkdir -p /tmp/azurite-data
 
 # Azurite를 127.0.0.1 바인딩으로 시작 (Private Link 모의: 외부 접근 차단)
