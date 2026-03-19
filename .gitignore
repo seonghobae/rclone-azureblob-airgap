@@ -9,7 +9,8 @@ rclone-bins/rclone-v1.73.2-linux-arm64.zip
 *.tar.gz.sha256
 dist/
 build/
-*.deb
+# 빌드된 deb (루트 레벨) — fuse-debs/ 안의 오프라인 캐시는 제외하지 않음
+/*.deb
 
 # 임시 파일
 *.tmp
