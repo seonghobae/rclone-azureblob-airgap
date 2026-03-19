@@ -9,7 +9,8 @@
 
 # 실제 설치 레이아웃을 직접 구성
 override_dh_auto_install:
-	$(eval ARCH := $(shell dpkg --print-architecture))
+	# DEB_HOST_ARCH: dpkg-buildpackage --host-arch 로 지정한 대상 아키텍처
+	$(eval ARCH := $(shell dpkg-architecture -qDEB_HOST_ARCH))
 	$(eval PKG  := debian/rclone-azureblob-airgap)
 	$(eval VER  := 1.73.2)
 
@@ -70,9 +71,9 @@ override_dh_fixperms:
 	dh_fixperms
 	# azure 설정 파일은 640 유지 (그룹 읽기 허용)
 	find debian/rclone-azureblob-airgap/usr/share/rclone-azureblob-airgap/azure \
-		-type f -exec chmod 640 {} \;
+		-type f -exec chmod 640 {} + || true
 	find debian/rclone-azureblob-airgap/etc/rclone \
-		-type d -exec chmod 750 {} \;
+		-type d -exec chmod 750 {} + || true
 
 override_dh_strip:
 	# rclone Go 바이너리는 strip 불필요
