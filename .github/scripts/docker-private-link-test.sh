@@ -115,6 +115,7 @@ trap cleanup EXIT
 rclone mount azblob-private:private-test "$MOUNT_PT" \
 	--config /etc/rclone/rclone.conf \
 	--vfs-cache-mode writes \
+	--vfs-write-back 0s \
 	--allow-other \
 	--log-level ERROR \
 	--daemon-timeout 10s &
@@ -133,14 +134,33 @@ if mountpoint -q "$MOUNT_PT" 2>/dev/null; then
 	# 쓰기 검증
 	WRITE_BASENAME="write-test-$(date +%s).txt"
 	WRITE_CONTENT="written-via-private-link"
-	echo "$WRITE_CONTENT" >"$MOUNT_PT/$WRITE_BASENAME" &&
-		green "마운트 쓰기 성공" || red "마운트 쓰기 실패"
+	if echo "$WRITE_CONTENT" >"$MOUNT_PT/$WRITE_BASENAME"; then
+		green "마운트 쓰기 성공"
+	else
+		red "마운트 쓰기 실패"
+	fi
 
 	WRITE_BACK_CONTENT=$(cat "$MOUNT_PT/$WRITE_BASENAME" 2>/dev/null || echo "")
 	if [ "$WRITE_BACK_CONTENT" = "$WRITE_CONTENT" ]; then
 		green "마운트 쓰기 내용 재확인 성공"
 	else
 		red "마운트 쓰기 내용 불일치: '$WRITE_BACK_CONTENT'"
+	fi
+
+	REMOTE_WRITE_CONTENT=""
+	for _ in 1 2 3 4 5 6 7 8 9 10; do
+		REMOTE_WRITE_CONTENT=$(rclone cat "azblob-private:private-test/$WRITE_BASENAME" \
+			--config /etc/rclone/rclone.conf 2>/dev/null || echo "")
+		if [ "$REMOTE_WRITE_CONTENT" = "$WRITE_CONTENT" ]; then
+			break
+		fi
+		info "마운트 쓰기 원격 반영 대기 중..."
+		sleep 1
+	done
+	if [ "$REMOTE_WRITE_CONTENT" = "$WRITE_CONTENT" ]; then
+		green "마운트 쓰기 → Azurite 원격 반영 확인"
+	else
+		red "마운트 쓰기 원격 반영 실패: '$REMOTE_WRITE_CONTENT'"
 	fi
 else
 	red "FUSE 마운트 실패 (mountpoint 미감지, entries: $(ls "$MOUNT_PT" 2>/dev/null || printf '<unavailable>'))"

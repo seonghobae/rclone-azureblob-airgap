@@ -63,7 +63,15 @@ class ReleaseHardeningTests(unittest.TestCase):
         self.assertNotIn('if ls "$MOUNT_PT" &>/dev/null; then', private_link_script)
         self.assertNotIn('|| ls "$MOUNT_PT"', private_link_script)
         self.assertIn(
-            'cat "$MOUNT_PT/$WRITE_BASENAME" 2>/dev/null || echo ""',
+            "--vfs-write-back 0s",
+            private_link_script,
+        )
+        self.assertIn(
+            'rclone cat "azblob-private:private-test/$WRITE_BASENAME"',
+            private_link_script,
+        )
+        self.assertIn(
+            'if echo "$WRITE_CONTENT" >"$MOUNT_PT/$WRITE_BASENAME"; then',
             private_link_script,
         )
 
