@@ -120,9 +120,9 @@ push/PR → main
   │           └── verify-mount.sh, verify-azureblob.sh (--allow-missing-fuse)
   │
   └── Integration test (Docker)
-        ├── Docker integration {jammy,noble}  (병렬)
+        ├── Docker integration {jammy,noble} x {amd64,arm64}  (병렬)
         │     Azurite + FUSE + rclone E2E
-        ├── Private Link DNS mock test
+        ├── Private Link DNS mock test {amd64,arm64}
         │     DNS override + `mountpoint` + mounted read/write
         └── configure-azureblob.sh 비인터랙티브 테스트
 
@@ -135,9 +135,9 @@ push → tag v*
         │     ├── systemd-analyze verify
         │     └── verify-mount.sh, verify-azureblob.sh (--allow-missing-fuse)
         ├── Reusable Integration test workflow
-        │     ├── Docker integration {jammy,noble}
-        │     │     tagged `amd64` deb install + packaged verify path
-        │     ├── Private Link DNS mock test
+        │     ├── Docker integration {jammy,noble} x {amd64,arm64}
+        │     │     tagged `amd64`/`arm64` deb install + packaged verify path
+        │     ├── Private Link DNS mock test {amd64,arm64}
         │     │     DNS override + `mountpoint` + mounted read/write
         │     └── configure-azureblob.sh 비인터랙티브 테스트
         └── Create GitHub Release (only after smoke-release + integration success)

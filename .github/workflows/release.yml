@@ -153,7 +153,7 @@ jobs:
     uses: ./.github/workflows/integration-test.yml
     with:
       use_release_deb: true
-      release_deb_artifact: release-deb-amd64
+      release_deb_artifact_prefix: release-deb
 
   create-release:
     name: Create GitHub Release
@@ -195,10 +195,11 @@ jobs:
 
           \`\`\`bash
           # 1. deb 다운로드 (인터넷 되는 머신)
-          curl -LO https://github.com/seonghobae/rclone-azureblob-airgap/releases/download/v${VER}/rclone-azureblob-airgap_${VER}_amd64.deb
+          TARGET_ARCH=<amd64|arm64>
+          curl -LO https://github.com/seonghobae/rclone-azureblob-airgap/releases/download/v${VER}/rclone-azureblob-airgap_${VER}_${TARGET_ARCH}.deb
 
           # 2. VM으로 전송 후 설치
-          sudo dpkg -i rclone-azureblob-airgap_${VER}_amd64.deb
+          sudo dpkg -i rclone-azureblob-airgap_${VER}_${TARGET_ARCH}.deb
 
           # 3. Azure Blob 설정
           bash /usr/share/rclone-azureblob-airgap/scripts/configure-azureblob.sh
