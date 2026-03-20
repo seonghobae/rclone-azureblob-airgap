@@ -227,8 +227,15 @@ class ReleaseHardeningTests(unittest.TestCase):
     def test_agents_canonical_doc_list_matches_required_docs(self) -> None:
         agents = read_text("AGENTS.md")
         canonical_line = next(
-            line for line in agents.splitlines() if line.startswith("- canonical docs:")
+            (
+                line
+                for line in agents.splitlines()
+                if line.startswith("- canonical docs:")
+            ),
+            None,
         )
+        self.assertIsNotNone(canonical_line, "missing '- canonical docs:' in AGENTS.md")
+        assert canonical_line is not None
         expected = [
             "docs/engineering/acceptance-criteria.md",
             "docs/engineering/harness-engineering.md",
