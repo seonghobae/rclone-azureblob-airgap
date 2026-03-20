@@ -224,6 +224,36 @@ class ReleaseHardeningTests(unittest.TestCase):
             with self.subTest(path=relative_path):
                 self.assertTrue((REPO_ROOT / relative_path).is_file(), relative_path)
 
+    def test_agents_canonical_doc_list_matches_required_docs(self) -> None:
+        agents = read_text("AGENTS.md")
+        canonical_line = next(
+            line for line in agents.splitlines() if line.startswith("- canonical docs:")
+        )
+        expected = [
+            "docs/engineering/acceptance-criteria.md",
+            "docs/engineering/harness-engineering.md",
+            "docs/agents/README.md",
+            "docs/coderabbit/review-commands.md",
+            "docs/operations/deploy-runbook.md",
+            "docs/workflow/delivery-plan.md",
+            "docs/workflow/one-day-delivery-plan.md",
+            "docs/workflow/pr-continuity.md",
+        ]
+        for relative_path in expected:
+            with self.subTest(path=relative_path):
+                self.assertIn(relative_path, canonical_line)
+        self.assertEqual(canonical_line.count("docs/"), len(expected))
+
+    def test_pr_and_coderabbit_docs_track_recent_pr_history(self) -> None:
+        pr_continuity = read_text("docs/workflow/pr-continuity.md")
+        coderabbit = read_text("docs/coderabbit/review-commands.md")
+        self.assertNotIn("closed PR 도 없다", pr_continuity)
+        self.assertNotIn("open/closed PR 이 없다", coderabbit)
+        self.assertIn("merged PR", pr_continuity)
+        self.assertIn("gh pr list --state all --limit 50", pr_continuity)
+        self.assertIn("merged PR", coderabbit)
+        self.assertIn("canonical PR 규칙", coderabbit)
+
 
 if __name__ == "__main__":
     unittest.main()
