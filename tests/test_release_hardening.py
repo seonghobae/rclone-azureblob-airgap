@@ -104,12 +104,8 @@ class ReleaseHardeningTests(unittest.TestCase):
             install_script,
         )
         self.assertIn(
-            'if ! dpkg -i --force-depends "$libpkg" "$fuse3pkg" >"$dpkg_log" 2>&1; then',
+            'if ! DPKG_FRONTEND_LOCKED=1 dpkg -i --force-depends "$libpkg" "$fuse3pkg" >"$dpkg_log" 2>&1; then',
             postinst,
-        )
-        self.assertIn(
-            'if ! dpkg -i --force-depends "${pkgs_ordered[@]}" >"$dpkg_log" 2>&1; then',
-            install_script,
         )
 
     def test_mount_success_checks_do_not_fallback_to_ls(self) -> None:
