@@ -38,13 +38,13 @@
 | 워크플로 | 필수 통과 |
 |---------|---------|
 | Build deb package | amd64 + arm64 빌드 성공, amd64 + arm64 smoke-test PASS |
-| Integration test | jammy + noble Docker 테스트 PASS=20 FAIL=0 |
-| Private Link mock | DNS mock + Azurite endpoint + `mountpoint` 확인 + mounted read/write PASS |
-| Release | tag 빌드한 deb를 amd64 + arm64 smoke-test + tagged `amd64` `.deb` 기반 reusable integration workflow 통과 후 GitHub Release 에 deb + sha256 4파일 업로드 |
+| Integration test | jammy + noble Docker 테스트가 amd64 + arm64 runner 에서 PASS |
+| Private Link mock | amd64 + arm64 runner 에서 DNS mock + Azurite endpoint + `mountpoint` 확인 + mounted read/write PASS |
+| Release | tag 빌드한 deb를 amd64 + arm64 smoke-test + tagged `amd64`/`arm64` `.deb` 기반 reusable integration workflow 통과 후 GitHub Release 에 deb + sha256 4파일 업로드 |
 
 ## 배포 완료 기준
 
 - GitHub Release 에 `_amd64.deb`, `_arm64.deb`, 각각의 `.sha256` 4파일 존재
 - 모든 CI 워크플로 success
 - README.md 설치 안내가 실제 동작과 일치
-- release 태그 run 도 tagged `amd64` `.deb` 를 설치한 Azure Blob integration coverage 를 다시 수행함
+- release 태그 run 도 tagged `amd64`/`arm64` `.deb` 를 설치한 Azure Blob integration coverage 를 다시 수행함

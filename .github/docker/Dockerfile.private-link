@@ -18,6 +18,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 # Note: Do NOT use RCLONE_VERSION — rclone treats it as --version flag
 ENV RCLONE_VER=1.73.2
+ARG RCLONE_BIN=rclone-linux-amd64
 
 # ── 기본 도구 + Node.js 20 LTS 설치 ──────────────────────────────────────────
 RUN apt-get update -qq && \
@@ -33,7 +34,7 @@ RUN apt-get update -qq && \
 RUN npm install -g azurite
 
 # ── rclone 바이너리 복사 (CI 에서 빌드 컨텍스트로 전달됨) ───────────────────
-COPY rclone-bins/rclone-linux-amd64 /usr/local/bin/rclone
+COPY rclone-bins/${RCLONE_BIN} /usr/local/bin/rclone
 RUN chmod 755 /usr/local/bin/rclone
 
 # ── FUSE3 오프라인 deb 캐시 복사 ─────────────────────────────────────────────

@@ -20,8 +20,17 @@ set -euo pipefail
 CODENAME="${UBUNTU_CODENAME:-jammy}"
 WORKSPACE="/workspace"
 PACKAGE_DEB="${PACKAGE_DEB:-}"
+RCLONE_BIN_ARCH="${RCLONE_BIN_ARCH:-amd64}"
 PASS=0
 FAIL=0
+
+case "$RCLONE_BIN_ARCH" in
+amd64 | arm64) ;;
+*)
+	echo "[FAIL] 지원하지 않는 RCLONE_BIN_ARCH: $RCLONE_BIN_ARCH" >&2
+	exit 1
+	;;
+esac
 
 log_filtered_dpkg_output() {
 	local log_file=$1
@@ -196,7 +205,7 @@ if [ -n "$PACKAGE_DEB" ]; then
 	/usr/bin/rclone version | head -1
 	green "release deb 경로 rclone 설치 완료"
 else
-	install -m 755 "${WORKSPACE}/rclone-bins/rclone-linux-amd64" /usr/local/bin/rclone
+	install -m 755 "${WORKSPACE}/rclone-bins/rclone-linux-${RCLONE_BIN_ARCH}" /usr/local/bin/rclone
 	rclone version | head -1
 	green "rclone 설치 완료"
 fi

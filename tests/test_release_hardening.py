@@ -15,7 +15,7 @@ class ReleaseHardeningTests(unittest.TestCase):
         workflow = read_text(".github/workflows/release.yml")
         self.assertIn("uses: ./.github/workflows/integration-test.yml", workflow)
         self.assertIn("use_release_deb: true", workflow)
-        self.assertIn("release_deb_artifact: release-deb-amd64", workflow)
+        self.assertIn("release_deb_artifact_prefix: release-deb", workflow)
         self.assertIn(
             "needs: [build-release-debs, smoke-release, release-integration]",
             workflow,
@@ -24,13 +24,53 @@ class ReleaseHardeningTests(unittest.TestCase):
     def test_integration_workflow_can_consume_release_deb_artifact(self) -> None:
         workflow = read_text(".github/workflows/integration-test.yml")
         self.assertIn("use_release_deb:", workflow)
-        self.assertIn("release_deb_artifact:", workflow)
+        self.assertIn("release_deb_artifact_prefix:", workflow)
         self.assertIn("Download release deb artifact", workflow)
         self.assertIn("Resolve release deb path", workflow)
+        self.assertIn("matrix.arch", workflow)
+        self.assertIn("ubuntu-24.04-arm", workflow)
+        self.assertIn("rclone-linux-${{ matrix.arch }}", workflow)
         self.assertIn('-e PACKAGE_DEB="${{ env.PACKAGE_DEB }}"', workflow)
         self.assertIn("PACKAGE_DEB=/workspace/$DEB", workflow)
         self.assertIn("MATCHES=(dist/*.deb)", workflow)
         self.assertIn('[ "${#MATCHES[@]}" -eq 1 ]', workflow)
+        self.assertIn(
+            "${{ inputs.release_deb_artifact_prefix }}-${{ matrix.arch }}", workflow
+        )
+        self.assertIn(
+            "- ubuntu: jammy\n            image: ubuntu:22.04\n            arch: amd64\n            runner: ubuntu-22.04",
+            workflow,
+        )
+        self.assertIn(
+            "- ubuntu: noble\n            image: ubuntu:24.04\n            arch: amd64\n            runner: ubuntu-22.04",
+            workflow,
+        )
+        self.assertIn(
+            "- ubuntu: jammy\n            image: ubuntu:22.04\n            arch: arm64\n            runner: ubuntu-24.04-arm",
+            workflow,
+        )
+        self.assertIn(
+            "- ubuntu: noble\n            image: ubuntu:24.04\n            arch: arm64\n            runner: ubuntu-24.04-arm",
+            workflow,
+        )
+
+    def test_private_link_mock_covers_amd64_and_arm64(self) -> None:
+        workflow = read_text(".github/workflows/integration-test.yml")
+        self.assertIn("Private Link DNS mock test (${{ matrix.arch }})", workflow)
+        self.assertIn(
+            'ZIP="rclone-v${RCLONE_VER}-linux-${{ matrix.arch }}.zip"', workflow
+        )
+        self.assertIn("rclone-bins/rclone-linux-${{ matrix.arch }}", workflow)
+        self.assertIn(
+            "--build-arg RCLONE_BIN=rclone-linux-${{ matrix.arch }}", workflow
+        )
+        self.assertIn("- arch: amd64\n            runner: ubuntu-22.04", workflow)
+        self.assertIn("- arch: arm64\n            runner: ubuntu-24.04-arm", workflow)
+        dockerfile = read_text(".github/docker/Dockerfile.private-link")
+        self.assertIn("ARG RCLONE_BIN=rclone-linux-amd64", dockerfile)
+        self.assertIn(
+            "COPY rclone-bins/${RCLONE_BIN} /usr/local/bin/rclone", dockerfile
+        )
 
     def test_integration_script_supports_package_runtime_path(self) -> None:
         integration_script = read_text(".github/scripts/run-integration-test.sh")
@@ -39,12 +79,20 @@ class ReleaseHardeningTests(unittest.TestCase):
         self.assertIn(
             "mapfile -t matches < <(for f in $pattern; do", integration_script
         )
+        self.assertIn('case "$RCLONE_BIN_ARCH" in', integration_script)
         self.assertIn(
             "/usr/share/rclone-azureblob-airgap/scripts/verify-azureblob.sh",
             integration_script,
         )
         self.assertIn("/usr/bin/rclone", integration_script)
         self.assertIn('red "release deb 설치 후 libfuse3-3 미설치"', integration_script)
+
+    def test_acceptance_criteria_mentions_arm64_private_link_coverage(self) -> None:
+        acceptance = read_text("docs/engineering/acceptance-criteria.md")
+        self.assertIn(
+            "amd64 + arm64 runner 에서 DNS mock + Azurite endpoint",
+            acceptance,
+        )
 
     def test_package_smoke_paths_do_not_force_depends_install(self) -> None:
         release_workflow = read_text(".github/workflows/release.yml")

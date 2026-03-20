@@ -53,7 +53,7 @@ sha256sum -c rclone-azureblob-airgap_{VER}_arm64.deb.sha256
 
 ```bash
 # scp 예시
-scp rclone-azureblob-airgap_{VER}_amd64.deb user@airgap-vm:/tmp/
+scp rclone-azureblob-airgap_{VER}_{ARCH}.deb user@airgap-vm:/tmp/
 
 # USB, rsync, 내부 파일 서버 등 어떤 방법도 가능
 ```
@@ -61,7 +61,7 @@ scp rclone-azureblob-airgap_{VER}_amd64.deb user@airgap-vm:/tmp/
 ### 3단계: VM에서 설치 (한 명령으로 완료)
 
 ```bash
-sudo dpkg -i rclone-azureblob-airgap_{VER}_amd64.deb
+sudo dpkg -i rclone-azureblob-airgap_{VER}_{ARCH}.deb
 ```
 
 `dpkg -i` 한 번으로 다음이 모두 자동 처리됩니다:
@@ -72,7 +72,7 @@ sudo dpkg -i rclone-azureblob-airgap_{VER}_amd64.deb
 - ✅ `/etc/rclone/rclone-azureblob.conf.template` Azure 설정 템플릿 배치
 - ✅ `rclone-azureblob@.service` systemd 유닛 등록
 
-릴리스 태그 경로에서도 같은 `.deb` 에 대해 amd64/arm64 smoke-test 와, tagged `amd64` `.deb` 를 Docker/Azurite 경로에 다시 설치해 검증하는 Azure Blob integration workflow 가 성공한 뒤에만 GitHub Release 가 생성됩니다.
+릴리스 태그 경로에서도 같은 `.deb` 에 대해 amd64/arm64 smoke-test 와, tagged `amd64`/`arm64` `.deb` 를 Docker/Azurite 경로에 다시 설치해 검증하는 Azure Blob integration workflow 가 성공한 뒤에만 GitHub Release 가 생성됩니다.
 
 ### 4단계: Azure Blob 설정
 

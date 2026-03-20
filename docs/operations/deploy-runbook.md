@@ -6,7 +6,7 @@
 - [ ] GitHub Actions 모든 워크플로 green (`gh run list --limit 5`)
 - [ ] `debian/changelog` 버전 항목 추가됨
 - [ ] `README.md` 설치 안내와 검증 경로가 현재 패키지/릴리스 동작과 일치
-- [ ] Release workflow 가 tagged `amd64` `.deb` 설치형 integration coverage 까지 통과함
+- [ ] Release workflow 가 tagged `amd64`/`arm64` `.deb` 설치형 integration coverage 까지 통과함
 - [ ] `tests/test_release_hardening.py` 통과
 
 ## 배포 실행

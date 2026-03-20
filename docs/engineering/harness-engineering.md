@@ -34,13 +34,13 @@ PY
   - `systemd-analyze verify` 로 두 개의 systemd 템플릿 검증
   - `verify-mount.sh`, `verify-azureblob.sh` 실행
 - `Integration test (Docker / Azure Private Link mock)`
-  - jammy/noble Azurite E2E
-  - Private Link mock (`mountpoint` + mounted read/write 검증 필수)
+  - jammy/noble Azurite E2E on amd64/arm64 runners
+  - Private Link mock on amd64/arm64 runners (`mountpoint` + mounted read/write 검증 필수)
   - `configure-azureblob.sh` 7개 인증 방식 생성 검증
 - `Release`
   - 태그 아티팩트 빌드
   - amd64/arm64 smoke-release
-  - tagged `amd64` `.deb` 를 설치하는 reusable integration workflow 재실행
+  - tagged `amd64`/`arm64` `.deb` 를 설치하는 reusable integration workflow 재실행
   - 위 검증이 모두 성공할 때만 GitHub Release 생성
 
 ## 금지 사항
