@@ -9,6 +9,12 @@
 
 ## 자주 쓰는 명령
 
+PR 상태를 다시 확인할 때는 아래 명령으로 현재 repo 상태를 먼저 본다.
+
+```bash
+gh pr list --state all --limit 50
+```
+
 PR 코멘트 또는 본문에 아래 명령을 남긴다.
 
 ```text

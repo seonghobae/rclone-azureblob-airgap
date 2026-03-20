@@ -258,7 +258,7 @@ class ReleaseHardeningTests(unittest.TestCase):
         self.assertNotIn("open/closed PR 이 없다", coderabbit)
         self.assertIn("merged PR", pr_continuity)
         self.assertIn("gh pr list --state all --limit 50", pr_continuity)
-        self.assertIn("merged PR", coderabbit)
+        self.assertIn("gh pr list --state all --limit 50", coderabbit)
         self.assertIn("canonical PR 규칙", coderabbit)
 
 
