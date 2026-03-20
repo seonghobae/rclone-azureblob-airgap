@@ -66,7 +66,7 @@ rclone-bins/ — 바이너리 (.gitignore, CI에서 다운로드)
 - 버그 수정: `fix:` 커밋 메시지
 - 문서 갱신: `docs:` 커밋 메시지
 - 릴리즈: `git tag v{rclone_ver}-{pkg_rev}` → push → Release 워크플로 자동 실행
-- canonical docs: `docs/engineering/harness-engineering.md`, `docs/agents/README.md`, `docs/workflow/pr-continuity.md`, `docs/workflow/one-day-delivery-plan.md`, `docs/coderabbit/review-commands.md`
+- canonical docs: `docs/engineering/acceptance-criteria.md`, `docs/engineering/harness-engineering.md`, `docs/agents/README.md`, `docs/coderabbit/review-commands.md`, `docs/operations/deploy-runbook.md`, `docs/workflow/delivery-plan.md`, `docs/workflow/one-day-delivery-plan.md`, `docs/workflow/pr-continuity.md`
 
 ## 테스트 범위
 
