@@ -104,13 +104,14 @@ class ReleaseHardeningTests(unittest.TestCase):
             install_script,
         )
         self.assertIn(
-            'if ! dpkg -i --force-depends "$libpkg" "$fuse3pkg" >"$dpkg_log" 2>&1; then',
+            'if ! DPKG_FRONTEND_LOCKED=1 dpkg -i --force-depends "$libpkg" "$fuse3pkg" >"$dpkg_log" 2>&1; then',
             postinst,
         )
-        self.assertIn(
-            'if ! dpkg -i --force-depends "${pkgs_ordered[@]}" >"$dpkg_log" 2>&1; then',
-            install_script,
-        )
+
+    def test_postinst_sets_dpkg_frontend_locked_for_nested_dpkg(self) -> None:
+        postinst = read_text("debian/postinst")
+        self.assertIn("DPKG_FRONTEND_LOCKED=1", postinst)
+        self.assertIn('dpkg -i --force-depends "$libpkg" "$fuse3pkg"', postinst)
 
     def test_mount_success_checks_do_not_fallback_to_ls(self) -> None:
         integration_script = read_text(".github/scripts/run-integration-test.sh")

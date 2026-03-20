@@ -65,7 +65,7 @@ install_fuse3_offline() {
   # --force-depends: 폐쇄망에서 apt 의존성 해결 불가 환경 대응
   local dpkg_log
   dpkg_log=$(mktemp /tmp/rclone-airgap-postinst-XXXXXX.log)
-  if ! dpkg -i --force-depends "$libpkg" "$fuse3pkg" >"$dpkg_log" 2>&1; then
+  if ! DPKG_FRONTEND_LOCKED=1 dpkg -i --force-depends "$libpkg" "$fuse3pkg" >"$dpkg_log" 2>&1; then
     log_filtered_dpkg_output "$dpkg_log"
     rm -f "$dpkg_log"
     echo "[rclone-airgap] ERROR: FUSE3 오프라인 설치 실패" >&2
