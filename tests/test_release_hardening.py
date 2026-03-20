@@ -77,7 +77,9 @@ class ReleaseHardeningTests(unittest.TestCase):
             integration_script,
         )
         self.assertIn("/usr/bin/rclone", integration_script)
-        self.assertIn('red "release deb 설치 후 libfuse3-3 미설치"', integration_script)
+        self.assertIn(
+            'red "release deb 설치 후 FUSE3 runtime 미확인"', integration_script
+        )
 
     def test_acceptance_criteria_mentions_arm64_private_link_coverage(self) -> None:
         acceptance = read_text("docs/engineering/acceptance-criteria.md")
@@ -104,9 +106,53 @@ class ReleaseHardeningTests(unittest.TestCase):
             install_script,
         )
         self.assertIn(
-            'if ! DPKG_FRONTEND_LOCKED=1 dpkg -i --force-depends "$libpkg" "$fuse3pkg" >"$dpkg_log" 2>&1; then',
+            'if ! dpkg-deb -x "$libpkg" "$extract_root/libfuse3";',
             postinst,
         )
+        self.assertNotIn(
+            'DPKG_FRONTEND_LOCKED=1 dpkg -i --force-depends "$libpkg" "$fuse3pkg"',
+            postinst,
+        )
+
+    def test_postinst_bootstraps_fuse_runtime_without_nested_dpkg(self) -> None:
+        postinst = read_text("debian/postinst")
+        self.assertIn("command -v fusermount3 >/dev/null 2>&1", postinst)
+        self.assertIn("find /lib /usr/lib -name libfuse3.so.3 -print -quit", postinst)
+        self.assertIn("fuse_runtime_bootstrapped()", postinst)
+        self.assertIn("remove_bootstrapped_runtime()", postinst)
+        self.assertIn('dpkg-deb -x "$fuse3pkg" "$extract_root/fuse3"', postinst)
+        self.assertIn('sort -u "$FUSE_MANIFEST" -o "$FUSE_MANIFEST"', postinst)
+
+    def test_postrm_cleans_unmanaged_bootstrapped_fuse_runtime(self) -> None:
+        postrm = read_text("debian/postrm")
+        self.assertIn('FUSE_MANIFEST="${STATE_DIR}/fuse-runtime.manifest"', postrm)
+        self.assertIn('if dpkg -S "$target" >/dev/null 2>&1; then', postrm)
+        self.assertIn('rm -f "$target" 2>/dev/null || true', postrm)
+
+    def test_workflows_verify_fuse_runtime_not_package_registry(self) -> None:
+        build_workflow = read_text(".github/workflows/build-deb.yml")
+        release_workflow = read_text(".github/workflows/release.yml")
+        self.assertIn("command -v fusermount3", build_workflow)
+        self.assertIn(
+            "find /lib /usr/lib -name libfuse3.so.3 -print -quit | grep -q .",
+            build_workflow,
+        )
+        self.assertNotIn('dpkg -l libfuse3-3 | grep "^ii"', build_workflow)
+        self.assertIn("command -v fusermount3", release_workflow)
+        self.assertIn(
+            "find /lib /usr/lib -name libfuse3.so.3 -print -quit | grep -q .",
+            release_workflow,
+        )
+        self.assertNotIn('dpkg -l libfuse3-3 | grep "^ii"', release_workflow)
+
+    def test_verify_mount_accepts_bootstrapped_fuse_runtime(self) -> None:
+        verify_mount = read_text("scripts/verify-mount.sh")
+        self.assertIn(
+            "path=$(find /lib /usr/lib -name libfuse3.so.3 -print -quit 2>/dev/null)",
+            verify_mount,
+        )
+        self.assertIn('[[ -n "$path" ]]', verify_mount)
+        self.assertIn("elif command -v fusermount3 &>/dev/null; then", verify_mount)
 
     def test_mount_success_checks_do_not_fallback_to_ls(self) -> None:
         integration_script = read_text(".github/scripts/run-integration-test.sh")

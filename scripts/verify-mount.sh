@@ -79,13 +79,20 @@ if command -v dpkg &>/dev/null; then
 	if dpkg -l libfuse3-3 2>/dev/null | grep -q "^ii"; then
 		ver=$(dpkg -l libfuse3-3 2>/dev/null | awk '/^ii/{print $3}')
 		check_pass "libfuse3-3 설치됨: $ver"
+	elif
+		path=$(find /lib /usr/lib -name libfuse3.so.3 -print -quit 2>/dev/null)
+		[[ -n "$path" ]]
+	then
+		check_pass "libfuse3 runtime 사용 가능: $path"
 	else
-		check_fail "libfuse3-3 미설치 → sudo dpkg -i rclone-azureblob-airgap_*.deb  (또는) sudo bash /usr/share/rclone-azureblob-airgap/scripts/install.sh 실행"
+		check_fail "libfuse3 runtime 미확인 → sudo dpkg -i rclone-azureblob-airgap_*.deb  (또는) sudo bash /usr/share/rclone-azureblob-airgap/scripts/install.sh 실행"
 	fi
 
 	if dpkg -l fuse3 2>/dev/null | grep -q "^ii"; then
 		ver=$(dpkg -l fuse3 2>/dev/null | awk '/^ii/{print $3}')
 		check_pass "fuse3 설치됨: $ver"
+	elif command -v fusermount3 &>/dev/null; then
+		check_pass "fuse3 runtime 사용 가능: $(command -v fusermount3)"
 	else
 		check_warn "fuse3 패키지 미설치 (fusermount3 없을 수 있음)"
 	fi

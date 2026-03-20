@@ -1,0 +1,28 @@
+#!/bin/bash
+# debian/postrm — 패키지 제거 후 처리
+set -e
+
+STATE_DIR="/var/lib/rclone-azureblob-airgap"
+FUSE_MANIFEST="${STATE_DIR}/fuse-runtime.manifest"
+
+cleanup_bootstrapped_fuse_runtime() {
+  [ -f "$FUSE_MANIFEST" ] || return 0
+  while IFS= read -r target; do
+    [ -n "$target" ] || continue
+    if dpkg -S "$target" >/dev/null 2>&1; then
+      continue
+    fi
+    rm -f "$target" 2>/dev/null || true
+  done < "$FUSE_MANIFEST"
+  rm -f "$FUSE_MANIFEST"
+  rmdir "$STATE_DIR" 2>/dev/null || true
+}
+
+case "$1" in
+  remove|purge)
+    cleanup_bootstrapped_fuse_runtime
+    ;;
+esac
+
+#DEBHELPER#
+exit 0

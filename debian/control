@@ -10,14 +10,14 @@ Package: rclone-azureblob-airgap
 Architecture: amd64 arm64
 Depends: ${misc:Depends}
 Description: rclone + Azure Blob Storage airgap bootstrap for Ubuntu
- Provides rclone binary, FUSE3 offline deb cache (auto-installed on setup),
+  Provides rclone binary, bundled FUSE3 runtime bootstrap payloads,
  configuration templates, systemd service units, and helper scripts for
  deploying rclone with Azure Blob Storage mount support on air-gapped Ubuntu
  VMs (22.04/24.04) behind Azure Private Link.
  .
  Features:
   - rclone v1.73.2 binary (amd64/arm64)
-  - Offline FUSE3 auto-install via postinst (jammy/noble x amd64/arm64)
+  - Bundled FUSE3 runtime bootstrap via postinst (jammy/noble x amd64/arm64)
   - Azure Blob authentication templates (Account Key, SAS, SP, MSI)
   - systemd mount service template (rclone-azureblob@.service)
   - Interactive configuration helper and verification scripts

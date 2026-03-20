@@ -176,7 +176,7 @@ jobs:
           name: ${{ matrix.artifact }}
           path: dist/
 
-      - name: Install deb (single dpkg -i, postinst auto-installs FUSE)
+      - name: Install deb (single dpkg -i, postinst bootstraps FUSE runtime)
         run: |
           sudo dpkg -i dist/*.deb
 
@@ -187,16 +187,16 @@ jobs:
           rclone version
           rclone --help | head -3
 
-      - name: Verify FUSE3 auto-installed by postinst
+      - name: Verify FUSE3 runtime bootstrapped by postinst
         run: |
-          echo "=== FUSE 설치 검증 (postinst 자동 설치) ==="
-          dpkg -l libfuse3-3 | grep "^ii" && echo "libfuse3-3 OK" || \
-            { echo "FAIL: libfuse3-3 미설치"; exit 1; }
-          dpkg -l fuse3 | grep "^ii" && echo "fuse3 OK" || \
-            { echo "FAIL: fuse3 미설치"; exit 1; }
+          echo "=== FUSE runtime 부트스트랩 검증 (postinst) ==="
+          command -v fusermount3 && echo "fusermount3 OK" || \
+            { echo "FAIL: fusermount3 미확인"; exit 1; }
+          find /lib /usr/lib -name libfuse3.so.3 -print -quit | grep -q . && echo "libfuse3.so.3 OK" || \
+            { echo "FAIL: libfuse3.so.3 미확인"; exit 1; }
           test -f /etc/fuse.conf && grep -q "user_allow_other" /etc/fuse.conf && \
             echo "/etc/fuse.conf OK" || { echo "FAIL: /etc/fuse.conf 없거나 user_allow_other 없음"; exit 1; }
-          echo "=== FUSE 자동 설치 검증 완료 ==="
+          echo "=== FUSE runtime 부트스트랩 검증 완료 ==="
 
       - name: Verify share files and fuse-debs cache
         run: |

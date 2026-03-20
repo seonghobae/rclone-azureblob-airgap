@@ -48,7 +48,8 @@ sudo dpkg -i rclone-azureblob-airgap_{VER}_amd64.deb
 
 # 설치 확인
 rclone version
-dpkg -l libfuse3-3 fuse3 | grep '^ii'
+command -v fusermount3
+find /lib /usr/lib -name libfuse3.so.3 -print -quit
 ```
 
 ---

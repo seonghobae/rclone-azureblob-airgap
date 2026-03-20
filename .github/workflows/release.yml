@@ -123,8 +123,8 @@ jobs:
           dpkg --print-architecture | grep -x "${{ matrix.arch }}"
           . /etc/os-release && test "$VERSION_CODENAME" = "${{ matrix.codename }}"
           rclone version
-          dpkg -l libfuse3-3 | grep "^ii"
-          dpkg -l fuse3 | grep "^ii"
+          command -v fusermount3
+          find /lib /usr/lib -name libfuse3.so.3 -print -quit | grep -q .
           test -f /etc/fuse.conf && grep -q "user_allow_other" /etc/fuse.conf
 
       - name: Verify bundled assets

@@ -37,7 +37,7 @@ git push  # Build deb + Integration test 자동 실행
 ```
 debian/
   control    — 패키지 메타데이터 (Depends: ${misc:Depends} 만, Recommends 없음)
-  postinst   — FUSE3 자동 설치 + /etc/rclone 뼈대 생성
+  postinst   — bundled FUSE runtime bootstrap + /etc/rclone 뼈대 생성
   rules      — dh_strip/shlibdeps/makeshlibs override (Go 바이너리)
   changelog  — 버전: 1.73.2-{N}
 fuse-debs/   — 번들 FUSE3 오프라인 캐시 (git 추적됨)
@@ -72,7 +72,7 @@ rclone-bins/ — 바이너리 (.gitignore, CI에서 다운로드)
 
 | 테스트 | 검증 항목 |
 |--------|----------|
-| Build deb smoke-test | amd64+arm64 실제 설치, FUSE3 자동 설치, /etc/rclone 레이아웃, systemd 유닛, bundled examples/fuse-debs 검증 |
+| Build deb smoke-test | amd64+arm64 실제 설치, bundled FUSE runtime bootstrap, /etc/rclone 레이아웃, systemd 유닛, bundled examples/fuse-debs 검증 |
 | Docker integration (jammy/noble) | amd64+arm64 runner 에서 Azurite + rclone CLI + FUSE mount + verify-azureblob.sh |
 | Private Link mock | amd64+arm64 runner 에서 DNS 오버라이드, disable_instance_discovery, Azurite endpoint, `mountpoint` 기반 FUSE 검증, mounted read/write |
 | configure-azureblob.sh | 비인터랙티브 7개 인증 방식(Account Key, SAS, ConnStr, SP Secret/Cert, MSI System/User, env_auth) 생성 |

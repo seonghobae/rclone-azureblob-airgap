@@ -3,17 +3,56 @@
 set -e
 
 SHARE_DIR="/usr/share/rclone-azureblob-airgap"
+STATE_DIR="/var/lib/rclone-azureblob-airgap"
+FUSE_MANIFEST="${STATE_DIR}/fuse-runtime.manifest"
 
-log_filtered_dpkg_output() {
-  local log_file=$1
-  grep -Ev "^(Reading|Selecting|Preparing|Unpacking|Setting up|Processing)" "$log_file" || true
+fuse_runtime_present() {
+  command -v fusermount3 >/dev/null 2>&1 && find /lib /usr/lib -name libfuse3.so.3 -print -quit 2>/dev/null | grep -q .
+}
+
+fuse_runtime_bootstrapped() {
+  [ -s "$FUSE_MANIFEST" ]
+}
+
+remove_bootstrapped_runtime() {
+  [ -f "$FUSE_MANIFEST" ] || return 0
+  while IFS= read -r target; do
+    [ -n "$target" ] || continue
+    if dpkg -S "$target" >/dev/null 2>&1; then
+      continue
+    fi
+    rm -f "$target" 2>/dev/null || true
+  done < "$FUSE_MANIFEST"
+  rm -f "$FUSE_MANIFEST"
+}
+
+copy_tree_if_exists() {
+  local src=$1
+  local dest=$2
+  local rel_path target
+  [ -d "$src" ] || return 0
+  while IFS= read -r rel_path; do
+    [ -n "$rel_path" ] || continue
+    target="$dest/$rel_path"
+    if [ -e "$target" ]; then
+      continue
+    fi
+  done < <(cd "$src" && find . \( -type f -o -type l \) -print | sed 's#^\./##')
+  while IFS= read -r rel_path; do
+    [ -n "$rel_path" ] || continue
+    target="$dest/$rel_path"
+    [ -e "$target" ] && continue
+    mkdir -p "$(dirname "$target")"
+    cp -a "$src/$rel_path" "$target"
+    printf '%s\n' "$target" >> "$FUSE_MANIFEST"
+  done < <(cd "$src" && find . \( -type f -o -type l \) -print | sed 's#^\./##')
 }
 
 # ── FUSE3 오프라인 자동 설치 헬퍼 ─────────────────────────────────────────────
 install_fuse3_offline() {
-  # 이미 설치됐으면 건너뜀
-  if dpkg -l libfuse3-3 2>/dev/null | grep -q "^ii"; then
-    echo "[rclone-airgap] libfuse3-3 이미 설치됨, 건너뜀"
+  # 이미 사용 가능하면 건너뜀
+  if fuse_runtime_present && ! fuse_runtime_bootstrapped; then
+    echo "[rclone-airgap] FUSE3 runtime 이미 사용 가능, 건너뜀"
     return 0
   fi
 
@@ -61,18 +100,40 @@ install_fuse3_offline() {
     return 0
   fi
 
-  echo "[rclone-airgap] FUSE3 오프라인 설치 중 (codename=$codename arch=$arch)"
-  # --force-depends: 폐쇄망에서 apt 의존성 해결 불가 환경 대응
-  local dpkg_log
-  dpkg_log=$(mktemp /tmp/rclone-airgap-postinst-XXXXXX.log)
-  if ! DPKG_FRONTEND_LOCKED=1 dpkg -i --force-depends "$libpkg" "$fuse3pkg" >"$dpkg_log" 2>&1; then
-    log_filtered_dpkg_output "$dpkg_log"
-    rm -f "$dpkg_log"
-    echo "[rclone-airgap] ERROR: FUSE3 오프라인 설치 실패" >&2
+  echo "[rclone-airgap] FUSE3 runtime 오프라인 부트스트랩 중 (codename=$codename arch=$arch)"
+  local extract_root
+  extract_root=$(mktemp -d /tmp/rclone-airgap-fuse-XXXXXX)
+  remove_bootstrapped_runtime
+  mkdir -p "$STATE_DIR"
+  : > "$FUSE_MANIFEST"
+  if ! dpkg-deb -x "$libpkg" "$extract_root/libfuse3"; then
+    rm -rf "$extract_root"
+    echo "[rclone-airgap] ERROR: libfuse3-3 runtime 추출 실패" >&2
     exit 1
   fi
-  log_filtered_dpkg_output "$dpkg_log"
-  rm -f "$dpkg_log"
+  if ! dpkg-deb -x "$fuse3pkg" "$extract_root/fuse3"; then
+    rm -rf "$extract_root"
+    echo "[rclone-airgap] ERROR: fuse3 runtime 추출 실패" >&2
+    exit 1
+  fi
+  copy_tree_if_exists "$extract_root/libfuse3/lib" /lib
+  copy_tree_if_exists "$extract_root/libfuse3/usr/lib" /usr/lib
+  copy_tree_if_exists "$extract_root/fuse3/bin" /bin
+  copy_tree_if_exists "$extract_root/fuse3/sbin" /sbin
+  copy_tree_if_exists "$extract_root/fuse3/usr/bin" /usr/bin
+  copy_tree_if_exists "$extract_root/fuse3/usr/sbin" /usr/sbin
+  sort -u "$FUSE_MANIFEST" -o "$FUSE_MANIFEST"
+  rm -rf "$extract_root"
+  if ! dpkg-statoverride --list /bin/fusermount3 > /dev/null 2>&1; then
+    chmod 4755 /bin/fusermount3 2>/dev/null || chmod 4755 /usr/bin/fusermount3 2>/dev/null || true
+  fi
+  if command -v ldconfig > /dev/null 2>&1; then
+    ldconfig 2>/dev/null || true
+  fi
+  if ! fuse_runtime_present; then
+    echo "[rclone-airgap] ERROR: FUSE3 runtime 부트스트랩 후에도 fusermount3/libfuse3.so.3 미확인" >&2
+    exit 1
+  fi
 
   # udev 규칙 재로드 (fuse3 패키지가 99-fuse3.rules 설치)
   if command -v udevadm > /dev/null 2>&1; then
@@ -88,7 +149,7 @@ install_fuse3_offline() {
     echo "[rclone-airgap] WARN: /dev/fuse 없음 — 커널 모듈 확인 필요: modprobe fuse"
   fi
 
-  echo "[rclone-airgap] FUSE3 설치 완료 (libfuse3-3 + fuse3)"
+  echo "[rclone-airgap] FUSE3 runtime 부트스트랩 완료 (fusermount3 + libfuse3.so.3)"
 }
 
 case "$1" in
@@ -168,8 +229,8 @@ EOF
     echo "=============================================="
     echo " rclone-azureblob-airgap 설치 완료"
     echo " rclone    : $(rclone version 2>/dev/null | head -1 || echo 'N/A')"
-    echo " libfuse3-3: $(dpkg -l libfuse3-3 2>/dev/null | awk '/^ii/{print $3}' || echo 'N/A')"
-    echo " fuse3     : $(dpkg -l fuse3      2>/dev/null | awk '/^ii/{print $3}' || echo 'N/A')"
+    echo " fusermount3: $(command -v fusermount3 2>/dev/null || echo 'N/A')"
+    echo " libfuse3  : $(find /lib /usr/lib -name libfuse3.so.3 -print -quit 2>/dev/null || echo 'N/A')"
     echo "=============================================="
     echo " 다음 단계:"
     echo "  1. bash /usr/share/rclone-azureblob-airgap/scripts/configure-azureblob.sh"
@@ -178,7 +239,7 @@ EOF
     echo "=============================================="
     ;;
 
-  abort-upgrade|abort-remove|abort-deconfigure)
+  abort-install|abort-upgrade|abort-remove|abort-deconfigure)
     ;;
 
   *)
