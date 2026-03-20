@@ -33,8 +33,9 @@ sudo dpkg -i rclone-azureblob-airgap_1.73.2-{N}_${ARCH}.deb
 # rclone 버전 확인
 rclone version
 
-# FUSE 확인
-dpkg -l libfuse3-3 fuse3 | grep '^ii'
+# FUSE runtime 확인
+command -v fusermount3
+find /lib /usr/lib -name libfuse3.so.3 -print -quit
 ls /dev/fuse && echo "/dev/fuse OK"
 
 # release gating 참고: GitHub Actions 에서 amd64/arm64 모두 dpkg -i + smoke-test 통과 후 릴리스됨

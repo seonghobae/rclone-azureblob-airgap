@@ -31,6 +31,7 @@ PY
 - `Build deb package`
   - amd64/arm64 빌드
   - plain `dpkg -i` 설치 smoke-test
+  - `fusermount3` + `libfuse3.so.3` runtime bootstrap 검증
   - `systemd-analyze verify` 로 두 개의 systemd 템플릿 검증
   - `verify-mount.sh`, `verify-azureblob.sh` 실행
 - `Integration test (Docker / Azure Private Link mock)`

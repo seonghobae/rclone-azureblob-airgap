@@ -114,7 +114,7 @@ push/PR → main
   │     ├── Build deb {amd64,arm64}        (병렬)
   │     └── Smoke test {amd64,arm64}
   │           ├── dpkg -i (postinst 검증)
-  │           ├── FUSE3 자동 설치 검증
+  │           ├── bundled FUSE runtime bootstrap 검증
   │           ├── bundled fuse-debs(8 files) assertion
   │           ├── example conf 존재 assertion
   │           └── verify-mount.sh, verify-azureblob.sh (--allow-missing-fuse)
@@ -131,7 +131,7 @@ push → tag v*
         ├── Build release deb {amd64,arm64}
         ├── Smoke release {amd64,arm64}
         │     ├── plain dpkg -i on tagged artifact
-        │     ├── FUSE3 auto-install verification
+        │     ├── FUSE3 runtime bootstrap verification
         │     ├── systemd-analyze verify
         │     └── verify-mount.sh, verify-azureblob.sh (--allow-missing-fuse)
         ├── Reusable Integration test workflow

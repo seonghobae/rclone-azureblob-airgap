@@ -66,7 +66,7 @@ sudo dpkg -i rclone-azureblob-airgap_{VER}_{ARCH}.deb
 
 `dpkg -i` 한 번으로 다음이 모두 자동 처리됩니다:
 - ✅ `rclone` 바이너리 → `/usr/bin/rclone`
-- ✅ `libfuse3-3` + `fuse3` → 번들 deb 에서 오프라인 자동 설치
+- ✅ `fusermount3` + `libfuse3.so.3` 파일 → 번들 FUSE runtime 을 오프라인 부트스트랩
 - ✅ `/etc/fuse.conf` → `user_allow_other` 자동 추가
 - ✅ `/etc/rclone/` 디렉토리 구조 생성
 - ✅ `/etc/rclone/rclone-azureblob.conf.template` Azure 설정 템플릿 배치

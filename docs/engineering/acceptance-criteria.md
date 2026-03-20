@@ -8,8 +8,7 @@
 |------|----------|
 | `sudo dpkg -i *.deb` 단일 명령으로 완료 | dpkg exit 0 |
 | rclone 바이너리 `/usr/bin/rclone` 설치 | `rclone version` 성공 |
-| `libfuse3-3` postinst 자동 설치 | `dpkg -l libfuse3-3 \| grep '^ii'` |
-| `fuse3` postinst 자동 설치 | `dpkg -l fuse3 \| grep '^ii'` |
+| bundled FUSE runtime bootstrap | `command -v fusermount3` + `find /lib /usr/lib -name libfuse3.so.3` |
 | `/etc/fuse.conf` user_allow_other 포함 | `grep user_allow_other /etc/fuse.conf` |
 | `/etc/rclone/` 디렉토리 구조 생성 | `ls /etc/rclone/` 성공 |
 | systemd 유닛 등록 | `systemd-analyze verify rclone-azureblob@.service rclone-mount@.service` |

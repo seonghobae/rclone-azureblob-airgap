@@ -155,10 +155,10 @@ if [ -n "$PACKAGE_DEB" ]; then
 fi
 
 # 이미 설치됐는지 확인
-if dpkg -l libfuse3-3 2>/dev/null | grep -q "^ii"; then
-	green "libfuse3-3 이미 설치됨 (시스템 패키지 활용)"
-	if [ -n "$PACKAGE_DEB" ] && dpkg -l fuse3 2>/dev/null | grep -q "^ii"; then
-		green "fuse3 release deb postinst 설치 확인"
+if command -v fusermount3 >/dev/null 2>&1 && find /lib /usr/lib -name libfuse3.so.3 -print -quit 2>/dev/null | grep -q .; then
+	green "FUSE3 runtime 사용 가능"
+	if [ -n "$PACKAGE_DEB" ]; then
+		green "release deb postinst runtime bootstrap 확인"
 	fi
 elif [ -z "$PACKAGE_DEB" ]; then
 	if [ -d "$DEB_DIR" ]; then
@@ -179,7 +179,7 @@ elif [ -z "$PACKAGE_DEB" ]; then
 		info "DEB_DIR 없음: $DEB_DIR (시스템 fuse3 사용)"
 	fi
 else
-	red "release deb 설치 후 libfuse3-3 미설치"
+	red "release deb 설치 후 FUSE3 runtime 미확인"
 	exit 1
 fi
 
