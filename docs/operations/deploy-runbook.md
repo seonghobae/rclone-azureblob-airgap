@@ -27,7 +27,8 @@ gh release view v1.73.2-{N} --repo seonghobae/rclone-azureblob-airgap
 
 ```bash
 # VM에서 실행
-sudo dpkg -i rclone-azureblob-airgap_1.73.2-{N}_amd64.deb
+ARCH=$(dpkg --print-architecture)
+sudo dpkg -i rclone-azureblob-airgap_1.73.2-{N}_${ARCH}.deb
 
 # rclone 버전 확인
 rclone version
@@ -35,6 +36,8 @@ rclone version
 # FUSE 확인
 dpkg -l libfuse3-3 fuse3 | grep '^ii'
 ls /dev/fuse && echo "/dev/fuse OK"
+
+# release gating 참고: GitHub Actions 에서 amd64/arm64 모두 dpkg -i + smoke-test 통과 후 릴리스됨
 
 # Azure Blob 연결 확인
 bash /usr/share/rclone-azureblob-airgap/scripts/verify-azureblob.sh --remote <remote>
