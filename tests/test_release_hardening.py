@@ -209,6 +209,27 @@ class ReleaseHardeningTests(unittest.TestCase):
         verify = read_text("scripts/verify-azureblob.sh")
         self.assertIn("info() {", verify)
 
+    def test_systemd_mount_units_do_not_use_shell_default_expansion_for_extra_args(
+        self,
+    ) -> None:
+        azureblob_unit = read_text("systemd/rclone-azureblob@.service")
+        generic_unit = read_text("systemd/rclone-mount@.service")
+
+        for unit in (azureblob_unit, generic_unit):
+            with self.subTest(unit=unit.splitlines()[0]):
+                self.assertNotIn("${EXTRA_ARGS:-}", unit)
+                self.assertIn("$EXTRA_ARGS", unit)
+
+    def test_systemd_mount_units_keep_remote_and_mountpoint_as_distinct_arguments(
+        self,
+    ) -> None:
+        azureblob_unit = read_text("systemd/rclone-azureblob@.service")
+        generic_unit = read_text("systemd/rclone-mount@.service")
+
+        for unit in (azureblob_unit, generic_unit):
+            with self.subTest(unit=unit.splitlines()[0]):
+                self.assertIn("${REMOTE} ${MOUNTPOINT}", unit)
+
     def test_required_canonical_docs_exist(self) -> None:
         required = [
             "docs/engineering/acceptance-criteria.md",

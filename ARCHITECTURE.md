@@ -2,13 +2,15 @@
 
 ## 개요
 
-`rclone-azureblob-airgap` 은 인터넷이 없는 Ubuntu VM에서 rclone + FUSE3 + Azure Blob Storage mount 환경을 **단일 deb 패키지** 또는 **tarball** 방식으로 완전히 부트스트랩합니다.
+`rclone-azureblob-airgap` 은 인터넷이 없는 Ubuntu VM에서
+rclone + FUSE3 + Azure Blob Storage mount 환경을 **단일 deb 패키지**
+또는 **tarball** 방식으로 완전히 부트스트랩합니다.
 
 ---
 
 ## 배포 레이어
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │  GitHub Release (인터넷 되는 머신에서 다운로드)                  │
 │  rclone-azureblob-airgap_{VER}_{amd64,arm64}.deb                │
@@ -39,7 +41,7 @@
 |------|------|
 | `/usr/bin/rclone` | rclone 바이너리 (Go 정적 바이너리) |
 | `/usr/local/bin/rclone` | 심볼릭 링크 → `/usr/bin/rclone` |
-| `/usr/share/rclone-azureblob-airgap/scripts/` | configure-azureblob.sh, verify-*.sh, install.sh |
+| `/usr/share/rclone-azureblob-airgap/scripts/` | 설치/검증 스크립트 |
 | `/usr/share/rclone-azureblob-airgap/azure/` | rclone.conf 템플릿, mount conf 예시 |
 | `/usr/share/rclone-azureblob-airgap/fuse-debs/` | 번들 오프라인 FUSE3 deb 캐시 |
 | `/lib/systemd/system/rclone-azureblob@.service` | Azure Blob mount 인스턴스 유닛 |
@@ -54,7 +56,7 @@
 
 ## tarball 방식 (레거시 / deb 불가 환경)
 
-```
+```text
 rclone-airgap/          ← repo 루트 (git clone 또는 tarball)
 ├── rclone-bins/        ← rclone 바이너리 (.gitignore, CI에서 다운로드)
 │   └── rclone-linux-{amd64,arm64}
@@ -69,7 +71,8 @@ rclone-airgap/          ← repo 루트 (git clone 또는 tarball)
 └── debian/             ← deb 패키지 메타데이터
 ```
 
-`scripts/install.sh` 는 `PKG_ROOT=$(dirname SCRIPT_DIR)` 로 자신이 실행된 위치를 기준으로 동작합니다.  
+`scripts/install.sh` 는 `PKG_ROOT=$(dirname SCRIPT_DIR)` 로 자신이 실행된
+위치를 기준으로 동작합니다.  
 deb 설치 후에는 `PKG_ROOT=/usr/share/rclone-azureblob-airgap` 이 됩니다.
 
 ---
@@ -90,7 +93,7 @@ deb 설치 후에는 `PKG_ROOT=/usr/share/rclone-azureblob-airgap` 이 됩니다
 
 ## Azure Private Link 대응
 
-```
+```text
 Azure VM (폐쇄망)
   │
   │ /etc/hosts 또는 내부 DNS
@@ -107,7 +110,7 @@ Azure VM (폐쇄망)
 
 ## CI/CD 파이프라인
 
-```
+```text
 push/PR → main
   ├── Build deb package
   │     ├── Download rclone {amd64,arm64}  (병렬)
@@ -145,9 +148,25 @@ push → tag v*
 
 ---
 
+## systemd mount 템플릿 인자 전달 규칙
+
+- `systemd/rclone-azureblob@.service`, `systemd/rclone-mount@.service` 는
+  `/etc/rclone/mounts/%i.conf` 의 `REMOTE`, `MOUNTPOINT`, `EXTRA_ARGS`
+  를 사용한다.
+- `REMOTE`, `MOUNTPOINT` 는 단일 인자로 유지되어야 하므로
+  `${REMOTE} ${MOUNTPOINT}` 형태를 유지한다.
+- `EXTRA_ARGS` 는 `--allow-other --read-only` 처럼 공백으로 구분된
+  **여러 rclone 플래그** 를 담으므로 `ExecStart=` 에서 반드시
+  `$EXTRA_ARGS` 로 전달한다.
+- `${EXTRA_ARGS:-}` 같은 shell 기본값 확장은 systemd `ExecStart=`
+  문법이 아니므로 사용하면 mount 실행 시 rclone 이 usage 를 출력하고
+  종료할 수 있다.
+
+---
+
 ## 인증 방식 결정 트리 (폐쇄망 기준)
 
-```
+```text
 인터넷 완전 차단?
   YES → Account Key / Connection String / SAS URL 중 선택
          (AAD 토큰 교환 불필요)
@@ -163,7 +182,8 @@ push → tag v*
 
 ### rclone 버전 업그레이드
 
-1. `.github/workflows/build-deb.yml`, `integration-test.yml`, `release.yml` 의 `RCLONE_VER` 변경
+1. `.github/workflows/build-deb.yml`, `integration-test.yml`, `release.yml`
+   의 `RCLONE_VER` 변경
 2. `debian/control` Description 버전 갱신
 3. `debian/changelog` 항목 추가
 4. 태그 → Release 자동 생성

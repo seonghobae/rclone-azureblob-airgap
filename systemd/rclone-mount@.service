@@ -25,6 +25,8 @@ EnvironmentFile=/etc/rclone/mounts/%i.conf
 ExecStartPre=/bin/mkdir -p ${MOUNTPOINT}
 
 # /usr/bin/rclone: deb 설치 경로 (tarball은 /usr/local/bin/rclone 심볼릭 링크)
+# 주의: systemd ExecStart 는 shell 기본값 확장(${VAR:-})을 지원하지 않으므로
+#       다중 인자 옵션은 $EXTRA_ARGS 로 whitespace splitting 되게 전달한다.
 ExecStart=/usr/bin/rclone mount \
     --config /etc/rclone/rclone.conf \
     --log-level INFO \
@@ -35,7 +37,7 @@ ExecStart=/usr/bin/rclone mount \
     --buffer-size 256M \
     --dir-cache-time 30s \
     --poll-interval 15s \
-    ${EXTRA_ARGS:-} \
+    $EXTRA_ARGS \
     ${REMOTE} ${MOUNTPOINT}
 
 ExecStop=/bin/fusermount3 -u ${MOUNTPOINT}

@@ -1,3 +1,14 @@
+rclone-azureblob-airgap (1.73.2-15) unstable; urgency=high
+
+  * systemd: pass mount config EXTRA_ARGS with systemd-compatible
+    whitespace splitting (`$EXTRA_ARGS`) instead of unsupported shell default
+    expansion so packaged rclone mount services no longer exit with usage
+    status 2 when extra flags are configured.
+  * tests: lock the systemd unit regression in test_release_hardening.py.
+  * docs: document the systemd ExecStart argument handling rule.
+
+ -- seonghobae <seonghobae@users.noreply.github.com>  Mon, 23 Mar 2026 00:00:00 +0000
+
 rclone-azureblob-airgap (1.73.2-11) unstable; urgency=medium
 
   * release.yml: require reusable integration-test workflow on tag releases

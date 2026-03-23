@@ -50,6 +50,8 @@ ExecStartPre=/bin/mkdir -p ${MOUNTPOINT}
 # ── rclone mount 실행 ─────────────────────────────────────────────────────────
 # /usr/bin/rclone: deb 설치 시 실제 경로
 # /usr/local/bin/rclone: tarball 설치 또는 심볼릭 링크 경로 (하위 호환)
+# 주의: systemd ExecStart 는 shell 기본값 확장(${VAR:-})을 지원하지 않으므로
+#       다중 인자 옵션은 $EXTRA_ARGS 로 whitespace splitting 되게 전달한다.
 ExecStart=/usr/bin/rclone mount \
     --config /etc/rclone/rclone.conf \
     --log-level INFO \
@@ -70,7 +72,7 @@ ExecStart=/usr/bin/rclone mount \
     --retries 3 \
     --retries-sleep 1s \
     \
-    ${EXTRA_ARGS:-} \
+    $EXTRA_ARGS \
     ${REMOTE} ${MOUNTPOINT}
 
 # ── 정지 처리 ─────────────────────────────────────────────────────────────────
