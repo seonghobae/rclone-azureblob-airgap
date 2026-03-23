@@ -282,6 +282,12 @@ class ReleaseHardeningTests(unittest.TestCase):
         self.assertIn("gh pr list --state all --limit 50", coderabbit)
         self.assertIn("canonical PR 규칙", coderabbit)
 
+    def test_release_notes_preserve_target_arch_placeholder(self) -> None:
+        release_workflow = read_text(".github/workflows/release.yml")
+        self.assertIn("TARGET_ARCH=<amd64|arm64>", release_workflow)
+        self.assertIn("_${VER}_\\${TARGET_ARCH}.deb", release_workflow)
+        self.assertNotIn("_${VER}_${TARGET_ARCH}.deb", release_workflow)
+
 
 if __name__ == "__main__":
     unittest.main()

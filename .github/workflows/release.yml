@@ -196,10 +196,10 @@ jobs:
           \`\`\`bash
           # 1. deb 다운로드 (인터넷 되는 머신)
           TARGET_ARCH=<amd64|arm64>
-          curl -LO https://github.com/seonghobae/rclone-azureblob-airgap/releases/download/v${VER}/rclone-azureblob-airgap_${VER}_${TARGET_ARCH}.deb
+          curl -LO https://github.com/seonghobae/rclone-azureblob-airgap/releases/download/v${VER}/rclone-azureblob-airgap_${VER}_\${TARGET_ARCH}.deb
 
           # 2. VM으로 전송 후 설치
-          sudo dpkg -i rclone-azureblob-airgap_${VER}_${TARGET_ARCH}.deb
+          sudo dpkg -i rclone-azureblob-airgap_${VER}_\${TARGET_ARCH}.deb
 
           # 3. Azure Blob 설정
           bash /usr/share/rclone-azureblob-airgap/scripts/configure-azureblob.sh
